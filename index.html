@@ -25,6 +25,7 @@ html,body{font-family:'Sarabun',-apple-system,BlinkMacSystemFont,sans-serif;back
 .splash-brand{margin-top:26px;font-size:24px;font-weight:800;color:#5C3E1E;letter-spacing:.5px}
 .splash-sub{margin-top:6px;font-size:14px;color:#9B7050;font-weight:600}
 .splash-tap{margin-top:30px;font-size:13px;color:#C8873A;font-weight:700;animation:tapBlink 2s ease-in-out infinite}
+.splash-credit{margin-top:14px;font-size:11px;color:#C0A888;font-weight:600;letter-spacing:.4px}
 @keyframes tapBlink{0%,100%{opacity:1}50%{opacity:.35}}
 
 /* ===== MAIN APP ===== */
@@ -164,11 +165,48 @@ html,body{font-family:'Sarabun',-apple-system,BlinkMacSystemFont,sans-serif;back
 #detailModal.on{display:block}
 .modal-sheet{position:absolute;bottom:0;left:0;right:0;background:#FDF8F0;border-radius:28px 28px 0 0;padding:8px 20px calc(32px + env(safe-area-inset-bottom,0px));max-height:90vh;overflow-y:auto;box-shadow:0 -8px 32px rgba(107,76,42,.2)}
 .modal-img{width:100%;border-radius:16px;margin-bottom:16px;max-height:240px;object-fit:contain;background:#F0E4CC;display:none}
-.detail-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1.5px solid #EEE0CC}
+.detail-row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1.5px solid #EEE0CC}
 .detail-row:last-of-type{border-bottom:none}
-.detail-label{font-size:12px;color:#9B7050;font-weight:700}
-.detail-value{font-size:14px;font-weight:700;color:#3D2810;text-align:right;max-width:60%}
+.detail-label{font-size:12px;color:#9B7050;font-weight:700;flex-shrink:0}
+.detail-value{font-size:14px;font-weight:700;color:#3D2810;text-align:right;overflow-wrap:anywhere}
 .detail-actions{margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* ITEMIZED BILL (ข้อ 5) */
+.section-divider{font-size:13px;font-weight:800;color:#5C3E1E;margin:18px 0 10px;padding-top:4px;border-top:2px dashed #DDD0C0}
+.item-table{background:#FFF8EE;border-radius:14px;padding:4px 14px;border:1.5px solid #EEE0CC}
+.item-line{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid #F0E4CC}
+.item-line:last-child{border-bottom:none}
+.item-line-name{min-width:0;flex:1}
+.item-line-orig{font-size:11.5px;color:#B09070;margin-bottom:1px;overflow-wrap:anywhere}
+.item-line-en{font-size:13.5px;font-weight:700;color:#3D2810;overflow-wrap:anywhere}
+.item-line-qty{font-size:11.5px;color:#9B7050;font-weight:600}
+.item-line-price{font-size:13.5px;font-weight:700;color:#5C3E1E;flex-shrink:0;white-space:nowrap}
+.totals-box{margin-top:10px;background:#FFFDF8;border-radius:14px;padding:12px 14px;border:1.5px solid #EEE0CC}
+.totals-row{display:flex;justify-content:space-between;font-size:12.5px;color:#9B7050;font-weight:600;padding:4px 0}
+.totals-row-grand{border-top:1.5px dashed #DDD0C0;margin-top:4px;padding-top:8px;font-size:14.5px;font-weight:800;color:#5C3E1E}
+
+/* ข้อ 2: CAMERA SCANNER OVERLAY */
+#cameraOverlay{position:fixed;inset:0;background:#0A0A0A;z-index:800;display:none;align-items:center;justify-content:center;overflow:hidden}
+#cameraOverlay.on{display:flex}
+#camVideo{width:100%;height:100%;object-fit:contain;background:#0A0A0A}
+.cam-guide{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.cam-topbar{position:absolute;top:0;left:0;right:0;padding:calc(16px + env(safe-area-inset-top,0px)) 18px 16px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(rgba(0,0,0,.55),transparent)}
+.cam-hint{color:#fff;font-size:13px;font-weight:700;background:rgba(0,0,0,.4);padding:7px 14px;border-radius:20px}
+.cam-iconbtn{width:40px;height:40px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;border:none;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.cam-bottombar{position:absolute;bottom:0;left:0;right:0;padding:24px 0 calc(36px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;justify-content:center;background:linear-gradient(transparent,rgba(0,0,0,.55))}
+.cam-shutter{width:74px;height:74px;border-radius:50%;background:#fff;border:5px solid rgba(255,255,255,.4);cursor:pointer;padding:0;box-shadow:0 4px 18px rgba(0,0,0,.4);transition:transform .12s}
+.cam-shutter:active{transform:scale(.9)}
+
+/* ข้อ 2: CORNER ADJUST OVERLAY */
+#adjustOverlay{position:fixed;inset:0;background:#0A0A0A;z-index:810;display:none;flex-direction:column}
+#adjustOverlay.on{display:flex}
+.adjust-topbar{color:#fff;font-size:13px;font-weight:700;text-align:center;padding:calc(16px + env(safe-area-inset-top,0px)) 16px 14px}
+.adjust-stage{position:relative;flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none;min-height:0}
+.adjust-stage img{max-width:100%;max-height:100%;display:block;user-select:none;-webkit-user-select:none;pointer-events:none}
+.adjust-svg{position:absolute;left:0;top:0;touch-action:none}
+.adjust-handle{fill:#FFD27A;stroke:#C8873A;stroke-width:2;cursor:grab;touch-action:none}
+.adjust-poly{fill:rgba(200,135,58,.22);stroke:#FFD27A;stroke-width:2}
+.adjust-bottombar{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px 18px calc(20px + env(safe-area-inset-bottom,0px));background:#0A0A0A}
 
 /* TOAST */
 #toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:12px 22px;border-radius:22px;font-size:13.5px;font-weight:700;z-index:9999;display:none;box-shadow:0 4px 18px rgba(0,0,0,.2);white-space:normal;overflow-wrap:break-word;max-width:88vw;width:max-content;text-align:center;color:#fff;line-height:1.4}
@@ -190,6 +228,7 @@ html,body{font-family:'Sarabun',-apple-system,BlinkMacSystemFont,sans-serif;back
   <div class="splash-brand">Gentle Journey</div>
   <div class="splash-sub">ระบบบัญชีใบเสร็จ AI</div>
   <div class="splash-tap">▶ แตะโลโก้เพื่อเข้าสู่ระบบ</div>
+  <div class="splash-credit">Design and Develop by ToteA</div>
 </div>
 
 <!-- ===== MAIN APP ===== -->
@@ -324,7 +363,7 @@ html,body{font-family:'Sarabun',-apple-system,BlinkMacSystemFont,sans-serif;back
   <div class="preview-box" id="prevBox"><img id="prevImg" src="" alt="preview"></div>
   <div class="ai-loading" id="aiLoad">
     <div class="ai-dots"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div></div>
-    <div class="ai-text">🤖 AI กำลังสแกนใบเสร็จ...</div>
+    <div class="ai-text" id="aiStatusText">🤖 AI กำลังอ่านใบเสร็จ...</div>
     <div class="ai-sub">ประมวลผลภาพและแยกข้อมูลอัตโนมัติ</div>
   </div>
 
@@ -332,24 +371,22 @@ html,body{font-family:'Sarabun',-apple-system,BlinkMacSystemFont,sans-serif;back
     <label class="form-label">🏪 ชื่อร้านค้า / รายการ *</label>
     <input type="text" id="fVendor" class="input" placeholder="เช่น ร้านอาหาร, Grab, Agoda...">
   </div>
-  <div class="input-row">
-    <div class="form-group">
-      <label class="form-label">📅 วันที่</label>
-      <input type="date" id="fDate" class="input">
-    </div>
-    <div class="form-group">
-      <label class="form-label">🏷️ หมวดหมู่</label>
-      <select id="fCat" class="input select" style="padding:11px 12px">
-        <option value="อาหาร">🍜 อาหาร</option>
-        <option value="เดินทาง">🚗 เดินทาง</option>
-        <option value="ที่พัก">🏨 ที่พัก</option>
-        <option value="บริการ">🔧 บริการ</option>
-        <option value="ช้อปปิ้ง">🛍️ ช้อปปิ้ง</option>
-        <option value="สันทนาการ">🎉 สันทนาการ</option>
-        <option value="สุขภาพ">💊 สุขภาพ</option>
-        <option value="อื่นๆ">📌 อื่นๆ</option>
-      </select>
-    </div>
+  <div class="form-group">
+    <label class="form-label">📅 วันที่</label>
+    <input type="date" id="fDate" class="input">
+  </div>
+  <div class="form-group">
+    <label class="form-label">🏷️ หมวดหมู่</label>
+    <select id="fCat" class="input select" style="padding:11px 12px">
+      <option value="อาหาร">🍜 อาหาร</option>
+      <option value="เดินทาง">🚗 เดินทาง</option>
+      <option value="ที่พัก">🏨 ที่พัก</option>
+      <option value="บริการ">🔧 บริการ</option>
+      <option value="ช้อปปิ้ง">🛍️ ช้อปปิ้ง</option>
+      <option value="สันทนาการ">🎉 สันทนาการ</option>
+      <option value="สุขภาพ">💊 สุขภาพ</option>
+      <option value="อื่นๆ">📌 อื่นๆ</option>
+    </select>
   </div>
   <div class="input-row">
     <div class="form-group">
@@ -413,6 +450,32 @@ html,body{font-family:'Sarabun',-apple-system,BlinkMacSystemFont,sans-serif;back
   </div>
 </div>
 
+<!-- ข้อ 2: กล้องสแกนแบบ CamScanner — กรอบนำทาง + ปรับมุมก่อนวิเคราะห์ -->
+<div id="cameraOverlay">
+  <video id="camVideo" autoplay playsinline muted></video>
+  <svg id="camGuideSvg" class="cam-guide" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+  <div class="cam-topbar">
+    <button class="cam-iconbtn" onclick="closeLiveCamera()">✕</button>
+    <div class="cam-hint">📐 จัดใบเสร็จให้อยู่ในกรอบ</div>
+    <div style="width:40px"></div>
+  </div>
+  <div class="cam-bottombar">
+    <button class="cam-shutter" onclick="captureFromCamera()" aria-label="ถ่ายภาพ"></button>
+  </div>
+</div>
+
+<div id="adjustOverlay">
+  <div class="adjust-topbar">ลากมุมให้ตรงขอบใบเสร็จ</div>
+  <div class="adjust-stage" id="adjustStage">
+    <img id="adjustImg" src="" draggable="false">
+    <svg id="adjustSvg" class="adjust-svg"></svg>
+  </div>
+  <div class="adjust-bottombar">
+    <button class="btn btn-secondary btn-sm" id="adjustRetakeBtn" onclick="retakeAdjust()">↩ ถ่ายใหม่</button>
+    <button class="btn btn-primary btn-sm" onclick="confirmAdjust()">✓ ยืนยัน ใช้ภาพนี้</button>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -432,6 +495,7 @@ const CATS=[
 function getCat(id){return CATS.find(c=>c.id===id)||CATS[7]}
 
 const SQL=`-- วิธีใช้: Supabase Dashboard > SQL Editor > New Query > วาง SQL > Run
+-- เคยรันเวอร์ชันก่อนหน้าไปแล้ว? รันซ้ำได้เลย ปลอดภัย ไม่ทำข้อมูลเดิมหาย (จะแค่เพิ่มคอลัมน์ใหม่ที่ขาด)
 -- ===============================================================
 
 CREATE TABLE IF NOT EXISTS receipts (
@@ -449,15 +513,28 @@ CREATE TABLE IF NOT EXISTS receipts (
   image_url     TEXT DEFAULT ''
 );
 
+-- เพิ่มคอลัมน์ใหม่สำหรับรายละเอียดใบเสร็จ: เวลา/วิธีจ่าย/ยอดก่อนภาษี/ภาษี/รายการสินค้า (JSON)
+ALTER TABLE receipts ADD COLUMN IF NOT EXISTS time TEXT;
+ALTER TABLE receipts ADD COLUMN IF NOT EXISTS payment_method TEXT;
+ALTER TABLE receipts ADD COLUMN IF NOT EXISTS subtotal DECIMAL(14,2);
+ALTER TABLE receipts ADD COLUMN IF NOT EXISTS tax DECIMAL(14,2);
+ALTER TABLE receipts ADD COLUMN IF NOT EXISTS items_json TEXT;
+
 ALTER TABLE receipts ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "pub_select" ON receipts;
 CREATE POLICY "pub_select" ON receipts FOR SELECT USING (true);
+DROP POLICY IF EXISTS "pub_insert" ON receipts;
 CREATE POLICY "pub_insert" ON receipts FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "pub_update" ON receipts;
 CREATE POLICY "pub_update" ON receipts FOR UPDATE USING (true);
+DROP POLICY IF EXISTS "pub_delete" ON receipts;
 CREATE POLICY "pub_delete" ON receipts FOR DELETE USING (true);
 
 -- Storage bucket (รันแยก หากยังไม่มี bucket ชื่อ receipts)
 INSERT INTO storage.buckets (id,name,public) VALUES ('receipts','receipts',true) ON CONFLICT DO NOTHING;
+DROP POLICY IF EXISTS "pub_upload" ON storage.objects;
 CREATE POLICY "pub_upload"  ON storage.objects FOR INSERT WITH CHECK (bucket_id='receipts');
+DROP POLICY IF EXISTS "pub_read_st" ON storage.objects;
 CREATE POLICY "pub_read_st" ON storage.objects FOR SELECT  USING  (bucket_id='receipts');`;
 
 // ==========================================
@@ -465,6 +542,7 @@ CREATE POLICY "pub_read_st" ON storage.objects FOR SELECT  USING  (bucket_id='re
 // ==========================================
 let sb=null, allRec=[], curFilter='all', selId=null;
 let imgBlob=null, imgB64=null;
+let scanExtra=null; // {time, payment_method, subtotal, tax, items[]} จากการสแกน AI ครั้งล่าสุด
 
 const cfg={
   url:  localStorage.getItem('cfg_sbUrl')||'',
@@ -546,7 +624,7 @@ function closeAll(){
   hideBdrop();
 }
 
-function trigCam(){closeSheet('sheetAction');setTimeout(()=>document.getElementById('fileCam').click(),360)}
+function trigCam(){closeSheet('sheetAction');setTimeout(()=>openLiveCamera(),360)}
 function trigGal(){closeSheet('sheetAction');setTimeout(()=>document.getElementById('fileGal').click(),360)}
 
 function openFormManual(){
@@ -563,6 +641,7 @@ function closeForm(){
   setTimeout(()=>{
     if(!document.querySelector('.sheet.open')) hideBdrop();
   },340);
+  stopCamStream(); // เผื่อกล้องยังเปิดค้างอยู่
   resetForm();
 }
 
@@ -579,6 +658,7 @@ function resetForm(){
   document.getElementById('fileCam').value='';
   document.getElementById('fileGal').value='';
   imgBlob=null; imgB64=null;
+  scanExtra=null;
   calcTHB();
 }
 
@@ -594,18 +674,47 @@ function openDetail(id){
   const di=document.getElementById('dtImg');
   if(r.image_url){di.src=r.image_url;di.style.display='block'} else di.style.display='none';
   const cat=getCat(r.category||'อื่นๆ');
+
+  // *** ข้อ 5: รายละเอียดธุรกรรม — วันที่/เวลา/วิธีชำระเงิน ***
   const rows=[
-    ['📅 วันที่',    r.date||'-'],
-    ['🏷️ หมวดหมู่', cat.icon+' '+( r.category||'อื่นๆ')],
-    ['💱 สกุลเงิน',  r.currency||'THB'],
-    ['💵 ยอดเงิน',   fmt(r.amount)+' '+(r.currency||'THB')],
-    ['📈 อัตราแลก',  r.currency&&r.currency!=='THB' ? `1 ${r.currency} = ${r.exchange_rate} ฿` : '-'],
-    ['🇹🇭 ยอดในบาท',b(r.amount_thb||r.amount)],
-    ['📁 โปรเจกต์',  r.project||'-'],
-    ['📝 หมายเหตุ',  r.notes||'-']
+    ['📅 วันที่',     r.date||'-'],
+    ...(r.time?[['🕐 เวลา', r.time]]:[]),
+    ...(r.payment_method?[['💳 วิธีชำระเงิน', r.payment_method]]:[]),
+    ['🏷️ หมวดหมู่',  cat.icon+' '+( r.category||'อื่นๆ')],
+    ['💱 สกุลเงิน',   r.currency||'THB'],
+    ['💵 ยอดเงิน',    fmt(r.amount)+' '+(r.currency||'THB')],
+    ['📈 อัตราแลก',   r.currency&&r.currency!=='THB' ? `1 ${r.currency} = ${r.exchange_rate} ฿` : '-'],
+    ['🇹🇭 ยอดในบาท', b(r.amount_thb||r.amount)],
+    ['📁 โปรเจกต์',   r.project||'-'],
+    ['📝 หมายเหตุ',   r.notes||'-']
   ];
-  document.getElementById('dtRows').innerHTML=rows.map(([l,v])=>`
+  let html=rows.map(([l,v])=>`
     <div class="detail-row"><div class="detail-label">${l}</div><div class="detail-value">${v}</div></div>`).join('');
+
+  // *** ข้อ 5: รายการสินค้าแบบละเอียด (แปลเป็นอังกฤษเสมอ) + ยอดก่อนภาษี/ภาษี ***
+  let items=[];
+  try{ items=r.items_json?JSON.parse(r.items_json):[]; }catch(e){ items=[]; }
+  if(Array.isArray(items)&&items.length){
+    html+=`<div class="section-divider">🧾 รายการสินค้า / Itemized Bill</div>`;
+    html+=`<div class="item-table">`+items.map(it=>`
+      <div class="item-line">
+        <div class="item-line-name">
+          ${it.name_original&&it.name_original!==it.name_en?`<div class="item-line-orig">${it.name_original}</div>`:''}
+          <div class="item-line-en">${it.name_en||'-'}${it.qty&&it.qty>1?` <span class="item-line-qty">× ${it.qty}</span>`:''}</div>
+        </div>
+        <div class="item-line-price">${fmt(it.price)}</div>
+      </div>`).join('')+`</div>`;
+
+    if(r.subtotal||r.tax){
+      html+=`<div class="totals-box">`
+        +(r.subtotal?`<div class="totals-row"><span>ยอดก่อนภาษี / Subtotal</span><span>${fmt(r.subtotal)}</span></div>`:'')
+        +(r.tax?`<div class="totals-row"><span>ภาษี / VAT</span><span>${fmt(r.tax)}</span></div>`:'')
+        +`<div class="totals-row totals-row-grand"><span>รวมทั้งหมด / Total</span><span>${fmt(r.amount)} ${r.currency||'THB'}</span></div>`
+      +`</div>`;
+    }
+  }
+
+  document.getElementById('dtRows').innerHTML=html;
   document.getElementById('detailModal').style.display='block';
 }
 
@@ -626,106 +735,426 @@ async function deleteReceipt(){
 }
 
 // ==========================================
-// FILE INPUT LISTENERS — *** CRITICAL FIX ***
-// *** ใช้ addEventListener ไม่ใช่ onchange attribute เพื่อให้ iPhone ทำงานได้ ***
+// FILE INPUT LISTENERS — *** ใช้ addEventListener ไม่ใช่ onchange attribute เพื่อให้ iPhone ทำงานได้ ***
 // ==========================================
 document.getElementById('fileCam').addEventListener('change', function(){
   const f=this.files[0];
-  this.value=''; // reset ให้เลือกไฟล์เดิมซ้ำได้
-  if(f) handleImg(f);
+  this.value='';
+  if(f) loadFileToAdjustScreen(f,'camera');
 });
 document.getElementById('fileGal').addEventListener('change', function(){
   const f=this.files[0];
   this.value='';
-  if(f) handleImg(f);
+  if(f) loadFileToAdjustScreen(f,'gallery');
 });
 
 // ==========================================
-// IMAGE PROCESSING
+// ข้อ 2: CAMSCANNER PIPELINE
+// 2.1 กล้อง+กรอบนำทาง → ปรับมุม 4 จุด → ยืดภาพให้ตรง (perspective warp) เหมือนสแกนเนอร์
+// 2.2 บีบอัดเป็น JPEG เล็กที่สุดเท่าที่ยังอ่านได้
+// 2.3 ค่อยส่งภาพที่ผ่านขั้นตอนข้างต้นไปให้ AI วิเคราะห์ OCR ต่อ
 // ==========================================
-function handleImg(file){
-  // เปิด sheet ฟอร์มและแสดง loading
-  document.getElementById('formTitle').textContent='📷 กำลังสแกนใบเสร็จ';
-  document.getElementById('aiLoad').style.display='block';
-  document.getElementById('prevBox').style.display='none';
-  document.getElementById('btnSave').disabled=true;
-  openSheet('sheetForm');
+const WORK_MAX=1600;      // ความละเอียดสูงสุดที่ใช้ตอนวาร์ปภาพ (พอสำหรับ OCR แต่ไม่ใหญ่จนช้า)
+const OUTPUT_MAX=1400;    // ความละเอียดสูงสุดของภาพผลลัพธ์สุดท้าย
+const GUIDE_X=0.10,GUIDE_Y=0.14,GUIDE_W=0.80,GUIDE_H=0.68; // กรอบนำทางบนกล้อง (สัดส่วนของจอ)
 
+let camStream=null;
+let adjustState=null; // {workCanvas, quad:[{x,y}x4], source, dispW, dispH, dragIdx}
+
+// ----- 2.1a กล้องสด + กรอบนำทาง -----
+async function openLiveCamera(){
+  const overlay=document.getElementById('cameraOverlay');
+  try{
+    if(!navigator.mediaDevices?.getUserMedia) throw new Error('ไม่รองรับกล้องในเบราว์เซอร์นี้');
+    camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1920}},audio:false});
+    const video=document.getElementById('camVideo');
+    video.srcObject=camStream;
+    await video.play().catch(()=>{});
+    drawGuideFrame();
+    overlay.classList.add('on');
+  }catch(e){
+    console.warn('Live camera unavailable, falling back to native capture:',e.message);
+    stopCamStream();
+    // *** Fallback: กล้องสดใช้ไม่ได้ (ไม่รองรับ/ไม่อนุญาต) → ใช้กล้อง native ของเครื่องแทน ไม่ให้ฟีเจอร์พัง ***
+    document.getElementById('fileCam').click();
+  }
+}
+function stopCamStream(){
+  if(camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream=null; }
+}
+function closeLiveCamera(){
+  stopCamStream();
+  document.getElementById('cameraOverlay').classList.remove('on');
+}
+function drawGuideFrame(){
+  const x=GUIDE_X*100,y=GUIDE_Y*100,w=GUIDE_W*100,h=GUIDE_H*100;
+  const svg=document.getElementById('camGuideSvg');
+  svg.innerHTML=`
+    <path d="M0,0 H100 V100 H0 Z M${x},${y} H${x+w} V${y+h} H${x} Z" fill="rgba(0,0,0,.55)" fill-rule="evenodd"/>
+    <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="#FFD27A" stroke-width="0.5" rx="1.5"/>
+  `;
+}
+
+// ----- ถ่ายภาพจากกล้องสด -----
+function captureFromCamera(){
+  const video=document.getElementById('camVideo');
+  const vw=video.videoWidth,vh=video.videoHeight;
+  if(!vw||!vh){ toast('กล้องยังไม่พร้อม ลองอีกครั้ง',true); return; }
+
+  const cap=document.createElement('canvas');
+  cap.width=vw; cap.height=vh;
+  cap.getContext('2d').drawImage(video,0,0,vw,vh);
+
+  // *** แปลงตำแหน่งกรอบนำทางบนจอ (object-fit:contain) ให้เป็นพิกัดจริงบนภาพที่ถ่าย ***
+  const rect=video.getBoundingClientRect();
+  const cw=rect.width, ch=rect.height;
+  const scale=Math.min(cw/vw, ch/vh);
+  const offX=(cw-vw*scale)/2, offY=(ch-vh*scale)/2;
+  const toNative=(px,py)=>({x:(px-offX)/scale, y:(py-offY)/scale});
+  const gx=GUIDE_X*cw, gy=GUIDE_Y*ch, gw=GUIDE_W*cw, gh=GUIDE_H*ch;
+  const quadNative=[
+    toNative(gx,gy), toNative(gx+gw,gy), toNative(gx+gw,gy+gh), toNative(gx,gy+gh)
+  ].map(p=>({x:Math.max(0,Math.min(vw,p.x)), y:Math.max(0,Math.min(vh,p.y))}));
+
+  closeLiveCamera();
+  const {canvas:workCanvas,quad}=downscaleWithQuad(cap,quadNative,WORK_MAX);
+  openAdjustScreen(workCanvas,quad,'camera');
+}
+
+// ----- โหลดไฟล์จากกล้อง native (fallback) หรือแกลเลอรี่ -----
+function loadFileToAdjustScreen(file,source){
   const reader=new FileReader();
-  reader.onerror=()=>{
-    document.getElementById('aiLoad').style.display='none';
-    document.getElementById('btnSave').disabled=false;
-    toast('อ่านไฟล์ผิดพลาด',true);
-  };
+  reader.onerror=()=>toast('อ่านไฟล์ผิดพลาด',true);
   reader.onload=ev=>{
     const img=new Image();
-    img.onerror=()=>{
-      document.getElementById('aiLoad').style.display='none';
-      document.getElementById('btnSave').disabled=false;
-      toast('โหลดภาพผิดพลาด',true);
-    };
+    img.onerror=()=>toast('โหลดภาพผิดพลาด',true);
     img.onload=()=>{
-      try{
-        const MAX=1200;
-        let w=img.naturalWidth, h=img.naturalHeight;
-        if(w>MAX||h>MAX){
-          if(w>=h){h=Math.round(h/w*MAX);w=MAX}
-          else{w=Math.round(w/h*MAX);h=MAX}
-        }
-        const cv=document.createElement('canvas');
-        cv.width=w; cv.height=h;
-        const ctx=cv.getContext('2d');
-        ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h);
-        ctx.drawImage(img,0,0,w,h);
-
-        // Scan effect: boost contrast
-        const id=ctx.getImageData(0,0,w,h), d=id.data;
-        const f=1.2, ic=128*(1-f);
-        for(let i=0;i<d.length;i+=4){
-          d[i]  =Math.min(255,Math.max(0,d[i]*f+ic));
-          d[i+1]=Math.min(255,Math.max(0,d[i+1]*f+ic));
-          d[i+2]=Math.min(255,Math.max(0,d[i+2]*f+ic));
-        }
-        ctx.putImageData(id,0,0);
-
-        const b64full=cv.toDataURL('image/jpeg',.82);
-        imgB64=b64full;
-        document.getElementById('prevImg').src=b64full;
-        document.getElementById('prevBox').style.display='block';
-
-        cv.toBlob(blob=>{
-          imgBlob=blob;
-          scanGemini(b64full);
-        },'image/jpeg',.82);
-      }catch(e){
-        console.error(e);
-        document.getElementById('aiLoad').style.display='none';
-        document.getElementById('btnSave').disabled=false;
-        toast('ประมวลผลภาพผิดพลาด',true);
-      }
+      const cap=document.createElement('canvas');
+      cap.width=img.naturalWidth; cap.height=img.naturalHeight;
+      cap.getContext('2d').drawImage(img,0,0);
+      // ไม่มีกรอบนำทาง (ภาพจากแกลเลอรี่/กล้อง native) → เริ่มจากกรอบ inset 6% เป็นค่าเริ่มต้นให้ผู้ใช้ลากปรับเอง
+      const m=0.06;
+      const quadNative=[
+        {x:cap.width*m,y:cap.height*m},{x:cap.width*(1-m),y:cap.height*m},
+        {x:cap.width*(1-m),y:cap.height*(1-m)},{x:cap.width*m,y:cap.height*(1-m)}
+      ];
+      const {canvas:workCanvas,quad}=downscaleWithQuad(cap,quadNative,WORK_MAX);
+      openAdjustScreen(workCanvas,quad,source);
     };
     img.src=ev.target.result;
   };
   reader.readAsDataURL(file);
 }
 
+function downscaleWithQuad(srcCanvas,quad,maxSize){
+  let w=srcCanvas.width,h=srcCanvas.height;
+  let scale=1;
+  if(Math.max(w,h)>maxSize) scale=maxSize/Math.max(w,h);
+  const outCanvas=document.createElement('canvas');
+  outCanvas.width=Math.round(w*scale); outCanvas.height=Math.round(h*scale);
+  outCanvas.getContext('2d').drawImage(srcCanvas,0,0,outCanvas.width,outCanvas.height);
+  const scaledQuad=quad.map(p=>({x:p.x*scale,y:p.y*scale}));
+  return {canvas:outCanvas,quad:scaledQuad};
+}
+
+// ----- 2.1b หน้าจอปรับมุม 4 จุด -----
+function openAdjustScreen(workCanvas,quad,source){
+  adjustState={workCanvas,quad,source,dragIdx:null};
+  const img=document.getElementById('adjustImg');
+  img.onload=()=>positionAdjustSvg();
+  img.src=workCanvas.toDataURL('image/jpeg',.9);
+  document.getElementById('adjustRetakeBtn').textContent=source==='camera'?'↩ ถ่ายใหม่':'↩ เลือกใหม่';
+  document.getElementById('adjustOverlay').classList.add('on');
+}
+
+function positionAdjustSvg(){
+  const img=document.getElementById('adjustImg');
+  const svg=document.getElementById('adjustSvg');
+  // รอให้ layout นิ่งก่อนวัดขนาดจริงที่แสดงผล
+  requestAnimationFrame(()=>{
+    const dispW=img.clientWidth,dispH=img.clientHeight;
+    if(!dispW||!dispH) return;
+    svg.setAttribute('viewBox',`0 0 ${dispW} ${dispH}`);
+    svg.style.width=dispW+'px'; svg.style.height=dispH+'px';
+    svg.style.left=img.offsetLeft+'px'; svg.style.top=img.offsetTop+'px';
+    adjustState.dispW=dispW; adjustState.dispH=dispH;
+    adjustState.dispScale=dispW/adjustState.workCanvas.width;
+    renderAdjustSvg();
+  });
+}
+
+function renderAdjustSvg(){
+  const svg=document.getElementById('adjustSvg');
+  const s=adjustState.dispScale;
+  const pts=adjustState.quad.map(p=>({x:p.x*s,y:p.y*s}));
+  const ptsStr=pts.map(p=>`${p.x},${p.y}`).join(' ');
+  const r=Math.max(10,Math.min(16,adjustState.dispW*0.03));
+  svg.innerHTML=`
+    <polygon class="adjust-poly" points="${ptsStr}"></polygon>
+    ${pts.map((p,i)=>`<circle class="adjust-handle" data-idx="${i}" cx="${p.x}" cy="${p.y}" r="${r}"></circle>`).join('')}
+  `;
+  svg.querySelectorAll('.adjust-handle').forEach(h=>{
+    h.addEventListener('pointerdown',onHandlePointerDown);
+  });
+}
+
+function onHandlePointerDown(e){
+  e.preventDefault();
+  const idx=+e.target.dataset.idx;
+  adjustState.dragIdx=idx;
+  e.target.setPointerCapture(e.pointerId);
+  const svg=document.getElementById('adjustSvg');
+  const move=ev=>{
+    if(adjustState.dragIdx===null) return;
+    const rect=svg.getBoundingClientRect();
+    let x=ev.clientX-rect.left, y=ev.clientY-rect.top;
+    x=Math.max(0,Math.min(adjustState.dispW,x));
+    y=Math.max(0,Math.min(adjustState.dispH,y));
+    const s=adjustState.dispScale;
+    adjustState.quad[adjustState.dragIdx]={x:x/s,y:y/s};
+    renderAdjustSvg();
+  };
+  const up=ev=>{
+    adjustState.dragIdx=null;
+    svg.removeEventListener('pointermove',move);
+    svg.removeEventListener('pointerup',up);
+    svg.removeEventListener('pointercancel',up);
+  };
+  svg.addEventListener('pointermove',move);
+  svg.addEventListener('pointerup',up);
+  svg.addEventListener('pointercancel',up);
+}
+
+window.addEventListener('resize',()=>{ if(adjustState&&document.getElementById('adjustOverlay').classList.contains('on')) positionAdjustSvg(); });
+
+function retakeAdjust(){
+  const source=adjustState?.source;
+  document.getElementById('adjustOverlay').classList.remove('on');
+  adjustState=null;
+  if(source==='camera') setTimeout(()=>openLiveCamera(),200);
+  else setTimeout(()=>document.getElementById('fileGal').click(),200);
+}
+
+function closeAdjustScreen(){
+  document.getElementById('adjustOverlay').classList.remove('on');
+  adjustState=null;
+}
+
+// ----- 2.1c ยืนยัน → ยืดภาพให้ตรง (perspective warp) -----
+function confirmAdjust(){
+  if(!adjustState) return;
+  const {workCanvas,quad}=adjustState;
+  closeAdjustScreen();
+  processScannedImage(workCanvas,quad);
+}
+
+// ===== คณิตศาสตร์ Perspective Warp (homography) — ทดสอบความถูกต้องแล้ว =====
+function solveLinearSystem(A,B){
+  const n=B.length;
+  const M=A.map((row,i)=>[...row,B[i]]);
+  for(let col=0;col<n;col++){
+    let maxRow=col;
+    for(let r=col+1;r<n;r++) if(Math.abs(M[r][col])>Math.abs(M[maxRow][col])) maxRow=r;
+    [M[col],M[maxRow]]=[M[maxRow],M[col]];
+    const pivot=M[col][col];
+    if(Math.abs(pivot)<1e-12) continue;
+    for(let c=col;c<=n;c++) M[col][c]/=pivot;
+    for(let r=0;r<n;r++){
+      if(r===col) continue;
+      const factor=M[r][col];
+      for(let c=col;c<=n;c++) M[r][c]-=factor*M[col][c];
+    }
+  }
+  return M.map(row=>row[n]);
+}
+function computeHomography(src,dst){
+  const A=[],B=[];
+  for(let i=0;i<4;i++){
+    const {x,y}=src[i],X=dst[i].x,Y=dst[i].y;
+    A.push([x,y,1,0,0,0,-x*X,-y*X]); B.push(X);
+    A.push([0,0,0,x,y,1,-x*Y,-y*Y]); B.push(Y);
+  }
+  const h=solveLinearSystem(A,B);
+  return [h[0],h[1],h[2],h[3],h[4],h[5],h[6],h[7],1];
+}
+function applyHomography(H,x,y){
+  const w=H[6]*x+H[7]*y+H[8];
+  return [(H[0]*x+H[1]*y+H[2])/w, (H[3]*x+H[4]*y+H[5])/w];
+}
+function dist(a,b){ return Math.hypot(a.x-b.x,a.y-b.y); }
+function computeOutputSize(quad){
+  const wTop=dist(quad[0],quad[1]), wBot=dist(quad[3],quad[2]);
+  const hL=dist(quad[0],quad[3]), hR=dist(quad[1],quad[2]);
+  let w=Math.round((wTop+wBot)/2), h=Math.round((hL+hR)/2);
+  const longest=Math.max(w,h);
+  if(longest>OUTPUT_MAX){ const sc=OUTPUT_MAX/longest; w=Math.round(w*sc); h=Math.round(h*sc); }
+  return {w:Math.max(200,w),h:Math.max(200,h)};
+}
+function warpPerspective(srcCanvas,quad,outW,outH){
+  const rectPts=[{x:0,y:0},{x:outW,y:0},{x:outW,y:outH},{x:0,y:outH}];
+  const H=computeHomography(rectPts,quad); // rect(output) -> quad(source)
+  const sw=srcCanvas.width,sh=srcCanvas.height;
+  const sCtx=srcCanvas.getContext('2d');
+  const sData=sCtx.getImageData(0,0,sw,sh).data;
+
+  const outCanvas=document.createElement('canvas');
+  outCanvas.width=outW; outCanvas.height=outH;
+  const oCtx=outCanvas.getContext('2d');
+  const oImg=oCtx.createImageData(outW,outH);
+  const oData=oImg.data;
+
+  for(let Yr=0;Yr<outH;Yr++){
+    for(let Xr=0;Xr<outW;Xr++){
+      const [xs,ys]=applyHomography(H,Xr,Yr);
+      const oi=(Yr*outW+Xr)*4;
+      if(xs<0||ys<0||xs>=sw-1||ys>=sh-1){
+        oData[oi]=255;oData[oi+1]=255;oData[oi+2]=255;oData[oi+3]=255;
+        continue;
+      }
+      const x0=xs|0,y0=ys|0,fx=xs-x0,fy=ys-y0;
+      const i00=(y0*sw+x0)*4,i10=(y0*sw+x0+1)*4,i01=((y0+1)*sw+x0)*4,i11=((y0+1)*sw+x0+1)*4;
+      for(let c=0;c<3;c++){
+        const top=sData[i00+c]*(1-fx)+sData[i10+c]*fx;
+        const bot=sData[i01+c]*(1-fx)+sData[i11+c]*fx;
+        oData[oi+c]=top*(1-fy)+bot*fy;
+      }
+      oData[oi+3]=255;
+    }
+  }
+  oCtx.putImageData(oImg,0,0);
+  return outCanvas;
+}
+
+// ----- 2.1d ปรับสี/แสงให้เหมือนเอกสารจากเครื่องสแกน + 2.2 บีบอัดเล็กสุด + 2.3 ส่งให้ AI -----
+function processScannedImage(workCanvas,quad){
+  document.getElementById('formTitle').textContent='📷 กำลังประมวลผลภาพ';
+  document.getElementById('aiLoad').style.display='block';
+  setAiStatus('🪄 กำลังปรับภาพให้ตรง...');
+  document.getElementById('prevBox').style.display='none';
+  document.getElementById('btnSave').disabled=true;
+  openSheet('sheetForm');
+
+  // หน่วงเฟรมเดียวให้ UI วาด loading ก่อนเริ่มงานหนัก (warp loop)
+  setTimeout(()=>{
+    try{
+      const {w:outW,h:outH}=computeOutputSize(quad);
+      const warped=warpPerspective(workCanvas,quad,outW,outH);
+
+      // ปรับให้เหมือนภาพจากเครื่องสแกนเอกสาร: คมชัด ขาวสะอาด
+      const finalCanvas=document.createElement('canvas');
+      finalCanvas.width=outW; finalCanvas.height=outH;
+      const fctx=finalCanvas.getContext('2d');
+      fctx.filter='grayscale(12%) contrast(138%) brightness(108%) saturate(108%)';
+      fctx.drawImage(warped,0,0);
+
+      // *** 2.2 บีบอัดเป็น JPEG เล็กที่สุดเท่าที่ยังอ่านง่าย ***
+      const b64full=finalCanvas.toDataURL('image/jpeg',.68);
+      imgB64=b64full;
+      document.getElementById('prevImg').src=b64full;
+      document.getElementById('prevBox').style.display='block';
+
+      finalCanvas.toBlob(blob=>{
+        imgBlob=blob;
+        // *** 2.3 ส่งภาพที่ผ่านการปรับแต่ง+บีบอัดแล้วเท่านั้น ไปวิเคราะห์ OCR ***
+        scanGemini(b64full);
+      },'image/jpeg',.68);
+    }catch(e){
+      console.error('Process scanned image failed:',e);
+      document.getElementById('aiLoad').style.display='none';
+      document.getElementById('btnSave').disabled=false;
+      toast('ประมวลผลภาพผิดพลาด ลองใหม่อีกครั้ง',true);
+    }
+  },50);
+}
+
 // ==========================================
-// GEMINI AI — FIXED (2026-06: gemini-2.0-flash ถูกปลดระวางแล้ว 1 มิ.ย. 2026
-// เปลี่ยนเป็น gemini-3.5-flash + บังคับ JSON schema output เพื่อความแม่นยำสูงสุด)
+// GEMINI AI — gemini-3.5-flash หลัก + gemini-3.1-flash-lite สำรอง
+// พร้อมระบบ retry อัตโนมัติเมื่อเจอ "high demand / overloaded" (503)
 // ==========================================
-const GEMINI_MODEL='gemini-3.5-flash';
+const GEMINI_MODELS=['gemini-3.5-flash','gemini-3.1-flash-lite'];
 const RECEIPT_SCHEMA={
   type:'OBJECT',
   properties:{
     vendor:{type:'STRING',description:'ชื่อร้านค้าหรือรายการ'},
     date:{type:'STRING',description:'วันที่บนใบเสร็จ รูปแบบ YYYY-MM-DD เท่านั้น ถ้าไม่พบให้เว้นว่าง'},
-    amount:{type:'NUMBER',description:'ยอดเงินรวมสุดท้ายที่ต้องจ่าย (ตัวเลขล้วน ไม่มีลูกน้ำ)'},
-    currency:{type:'STRING',description:'รหัสสกุลเงิน 3 ตัวอักษร เช่น THB, USD, JPY'},
+    time:{type:'STRING',description:'เวลาบนใบเสร็จ รูปแบบ HH:MM 24 ชม. ถ้าไม่พบให้เว้นว่าง'},
+    payment_method:{type:'STRING',description:'วิธีชำระเงิน แปลเป็นภาษาอังกฤษสั้นๆ เช่น Cash, Credit Card, QR Payment, Bank Transfer ถ้าไม่พบให้เว้นว่าง'},
+    amount:{type:'NUMBER',description:'ยอดเงินรวมสุดท้ายที่ต้องจ่าย (Grand Total)'},
+    subtotal:{type:'NUMBER',description:'ยอดก่อนภาษี ถ้ามีระบุบนใบเสร็จ ไม่งั้นเว้นว่าง'},
+    tax:{type:'NUMBER',description:'ภาษีมูลค่าเพิ่ม/VAT ถ้ามีระบุบนใบเสร็จ ไม่งั้นเว้นว่าง'},
+    currency:{type:'STRING',description:'รหัสสกุลเงิน 3 ตัวอักษร เช่น THB, USD, JPY, KRW'},
     category:{type:'STRING',enum:['อาหาร','เดินทาง','ที่พัก','บริการ','ช้อปปิ้ง','สันทนาการ','สุขภาพ','อื่นๆ']},
-    notes:{type:'STRING',description:'สรุปรายการสั้นๆ 1 บรรทัด'}
+    notes:{type:'STRING',description:'สรุปรายการสั้นๆ 1 บรรทัด'},
+    items:{
+      type:'ARRAY',
+      description:'รายการสินค้า/อาหารแต่ละบรรทัดบนใบเสร็จ ถ้าไม่มีให้ส่ง array ว่าง',
+      items:{
+        type:'OBJECT',
+        properties:{
+          name_original:{type:'STRING',description:'ชื่อรายการตามที่พิมพ์บนใบเสร็จ ภาษาต้นฉบับ (ไทย/เกาหลี/ญี่ปุ่น ฯลฯ)'},
+          name_en:{type:'STRING',description:'แปลชื่อรายการนี้เป็นภาษาอังกฤษเสมอ แม้ต้นฉบับเป็นภาษาไทยก็ต้องแปล'},
+          qty:{type:'NUMBER'},
+          price:{type:'NUMBER',description:'ราคารวมของรายการนี้'}
+        },
+        required:['name_en','price']
+      }
+    }
   },
   required:['vendor','amount']
 };
+
+function setAiStatus(text){
+  const el=document.getElementById('aiStatusText');
+  if(el) el.textContent=text;
+}
+
+// เรียก Gemini 1 ครั้ง สำหรับโมเดลที่ระบุ — โยน error ที่มี .retryable บอกว่าควร retry ไหม
+async function callGeminiOnce(model,b64data,prompt){
+  const res=await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(cfg.gem)}`,
+    {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        contents:[{parts:[{text:prompt},{inline_data:{mime_type:'image/jpeg',data:b64data}}]}],
+        generationConfig:{
+          maxOutputTokens:3072,
+          thinkingConfig:{thinkingLevel:'low'},
+          responseMimeType:'application/json',
+          responseSchema:RECEIPT_SCHEMA
+        }
+      })
+    }
+  );
+
+  if(!res.ok){
+    const errBody=await res.json().catch(()=>null);
+    const apiMsg=errBody?.error?.message||'';
+    const err=new Error();
+    err.status=res.status;
+    // *** FIX: 429/503/5xx ถือว่า "ลองใหม่ได้" (เซิร์ฟเวอร์ไม่ว่างชั่วคราว ไม่ใช่ปัญหาถาวร) ***
+    err.retryable=res.status===429||res.status===503||res.status>=500;
+    if(res.status===400&&/API key not valid|API_KEY_INVALID/i.test(apiMsg)) err.message='API Key ไม่ถูกต้อง — ตรวจสอบใน ⚙️ ตั้งค่าอีกครั้ง';
+    else if(res.status===403) err.message='Key ถูกปฏิเสธ (403) — เช็คว่าเปิดใช้ Generative Language API และไม่ได้ตั้งข้อจำกัด Referrer ใน Google Cloud Console';
+    else if(res.status===404) err.message='ไม่พบโมเดล AI (404) — Google อาจเปลี่ยนชื่อรุ่นโมเดลอีกครั้ง';
+    else if(res.status===503) err.message='เซิร์ฟเวอร์ AI ของ Google มีผู้ใช้งานหนาแน่นมาก (503)';
+    else if(res.status===429) err.message='โควต้าหรือคิวคำขอเต็มชั่วคราว (429)';
+    else err.message=(apiMsg||('Gemini HTTP '+res.status)).slice(0,100);
+    throw err;
+  }
+
+  const data=await res.json();
+  const finishReason=data?.candidates?.[0]?.finishReason;
+  if(finishReason==='SAFETY'||finishReason==='PROHIBITED_CONTENT'){
+    const err=new Error('ภาพถูกระบบความปลอดภัยของ Google บล็อก ลองถ่ายใหม่'); err.retryable=false; throw err;
+  }
+  const parts=data?.candidates?.[0]?.content?.parts;
+  if(!parts?.length){ const err=new Error('AI ไม่ตอบกลับข้อมูล (เปล่า) ลองถ่ายใหม่ให้ภาพชัดขึ้น'); err.retryable=true; throw err; }
+  const raw=parts.filter(p=>!p.thought).map(p=>p.text||'').join('');
+  const m=raw.match(/\{[\s\S]*\}/);
+  if(!m){ const err=new Error('AI ไม่ได้ส่ง JSON กลับมา: '+raw.slice(0,100)); err.retryable=true; throw err; }
+  return JSON.parse(m[0]);
+}
 
 async function scanGemini(b64full){
   if(!cfg.gem){
@@ -736,56 +1165,34 @@ async function scanGemini(b64full){
     return;
   }
   try{
-    // *** FIX: ตัด data URI prefix ออก ***
     const b64data=b64full.split(',')[1];
     if(!b64data) throw new Error('แปลงรูปภาพไม่สำเร็จ');
 
-    const prompt=`คุณคือ AI สแกนใบเสร็จ/บิล ดึงข้อมูลจากภาพนี้ให้แม่นยำที่สุด ใช้ยอดรวมสุดท้าย (Grand Total / ยอดสุทธิ) ไม่ใช่ยอดก่อนหักส่วนลด หากเป็นใบเสร็จภาษาไทยให้ระบุ currency เป็น THB`;
+    const prompt=`คุณคือ AI สแกนใบเสร็จ/บิล ดึงข้อมูลจากภาพนี้ให้แม่นยำที่สุด ใช้ยอดรวมสุดท้าย (Grand Total / ยอดสุทธิ) ไม่ใช่ยอดก่อนหักส่วนลด หากเป็นใบเสร็จภาษาไทยให้ระบุ currency เป็น THB ให้ดึงรายการสินค้าทุกบรรทัดถ้ามี และแปลชื่อรายการเป็นภาษาอังกฤษเสมอไม่ว่าต้นฉบับจะเป็นภาษาอะไร (รวมถึงภาษาไทย)`;
 
-    // *** FIX: ใช้ ?key= เป็น query parameter (ใช้ได้ทั้งคีย์รูปแบบเก่า AIza... และรูปแบบใหม่ AQ.... ) ***
-    const res=await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(cfg.gem)}`,
-      {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          contents:[{parts:[{text:prompt},{inline_data:{mime_type:'image/jpeg',data:b64data}}]}],
-          generationConfig:{
-            maxOutputTokens:2048,
-            thinkingConfig:{thinkingLevel:'low'},
-            responseMimeType:'application/json',
-            responseSchema:RECEIPT_SCHEMA
-          }
-        })
+    // *** FIX: แผนลองใหม่ — ลอง model หลัก 2 ครั้ง แล้วค่อยสลับไป model สำรองที่เบากว่า/คิวไม่ค่อยแน่น ***
+    const plan=[
+      {model:GEMINI_MODELS[0],delay:0,   label:'🤖 AI กำลังอ่านใบเสร็จ...'},
+      {model:GEMINI_MODELS[0],delay:1500,label:'⏳ เซิร์ฟเวอร์มีผู้ใช้งานเยอะ กำลังลองใหม่...'},
+      {model:GEMINI_MODELS[1],delay:1800,label:'🔄 สลับไปใช้โมเดลสำรองให้อัตโนมัติ...'}
+    ];
+
+    let r=null,lastErr=null;
+    for(const step of plan){
+      if(step.delay) await new Promise(res=>setTimeout(res,step.delay));
+      setAiStatus(step.label);
+      try{
+        r=await callGeminiOnce(step.model,b64data,prompt);
+        lastErr=null;
+        break;
+      }catch(e){
+        lastErr=e;
+        console.warn('Gemini attempt failed ('+step.model+'):',e.message);
+        if(!e.retryable) break;
       }
-    );
-
-    if(!res.ok){
-      // *** FIX: ดึงข้อความ error จริงจาก Google มาแสดง แทนการขึ้น error เฉยๆ ***
-      const errBody=await res.json().catch(()=>null);
-      const apiMsg=errBody?.error?.message||'';
-      if(res.status===400&&/API key not valid|API_KEY_INVALID/i.test(apiMsg)) throw new Error('API Key ไม่ถูกต้อง — ตรวจสอบใน ⚙️ ตั้งค่าอีกครั้ง');
-      if(res.status===403) throw new Error('Key ถูกปฏิเสธ (403) — เช็คว่าเปิดใช้ Generative Language API และไม่ได้ตั้งข้อจำกัด Referrer ใน Google Cloud Console');
-      if(res.status===404) throw new Error('ไม่พบโมเดล AI (404) — Google อาจเปลี่ยนชื่อรุ่นโมเดลอีกครั้ง');
-      if(res.status===429) throw new Error('ใช้งานเกินโควต้าฟรีรายวัน/รายนาที (429) — รอสักครู่แล้วลองใหม่');
-      throw new Error((apiMsg||('Gemini HTTP '+res.status)).slice(0,100));
     }
-
-    const data=await res.json();
-
-    // เช็คว่าโดนบล็อกด้วย Safety Filter หรือไม่
-    const finishReason=data?.candidates?.[0]?.finishReason;
-    if(finishReason==='SAFETY'||finishReason==='PROHIBITED_CONTENT') throw new Error('ภาพถูกระบบความปลอดภัยของ Google บล็อก ลองถ่ายใหม่');
-
-    // *** FIX: กรอง part ที่เป็น "thought" (ความคิด AI ภายใน) ออกก่อน ดึงเฉพาะ text จริง ***
-    const parts=data?.candidates?.[0]?.content?.parts;
-    if(!parts?.length) throw new Error('AI ไม่ตอบกลับข้อมูล (เปล่า) ลองถ่ายใหม่ให้ภาพชัดขึ้น');
-    const raw=parts.filter(p=>!p.thought).map(p=>p.text||'').join('');
-
-    // *** FIX: ดึง JSON ด้วย regex เป็น fallback เผื่อมี text แทรกแม้ตั้ง JSON mode แล้ว ***
-    const m=raw.match(/\{[\s\S]*\}/);
-    if(!m) throw new Error('AI ไม่ได้ส่ง JSON กลับมา: '+raw.slice(0,100));
-    const r=JSON.parse(m[0]);
+    if(lastErr) throw lastErr;
+    if(!r) throw new Error('ไม่สามารถสแกนได้ในขณะนี้ ลองใหม่อีกครั้ง');
 
     document.getElementById('fVendor').value=r.vendor||'';
     document.getElementById('fNote').value=r.notes||'';
@@ -798,10 +1205,24 @@ async function scanGemini(b64full){
     if(r.category&&validCats.includes(r.category)) document.getElementById('fCat').value=r.category;
     if(curr==='THB') document.getElementById('fRate').value='1';
     calcTHB();
+
+    // *** เก็บข้อมูลรายการย่อย/เวลา/วิธีจ่าย ไว้แนบตอนบันทึก (ใช้แสดงในรายละเอียดใบเสร็จ) ***
+    scanExtra={
+      time:/^\d{1,2}:\d{2}$/.test(r.time||'')?r.time:'',
+      payment_method:(r.payment_method||'').slice(0,40),
+      subtotal:(r.subtotal&&!isNaN(+r.subtotal))?+r.subtotal:null,
+      tax:(r.tax&&!isNaN(+r.tax))?+r.tax:null,
+      items:Array.isArray(r.items)?r.items.filter(it=>it&&(it.name_en||it.name_original)).map(it=>({
+        name_original:String(it.name_original||'').slice(0,80),
+        name_en:String(it.name_en||it.name_original||'').slice(0,80),
+        qty:(it.qty&&!isNaN(+it.qty))?+it.qty:1,
+        price:(it.price&&!isNaN(+it.price))?+it.price:0
+      })):[]
+    };
+
     toast('✅ สแกนสำเร็จ! ตรวจสอบข้อมูลแล้วกดบันทึก');
   }catch(e){
     console.error('Gemini fail:',e);
-    // *** FIX: แสดง error จริงใน toast เพื่อช่วยวินิจฉัยปัญหา (ไม่ใช่ข้อความลอยๆ) ***
     toast('⚠️ '+(e.message||'AI สแกนผิดพลาด')+' — กรอกเองได้เลย',true);
     document.getElementById('fDate').value=today();
   }finally{
@@ -862,7 +1283,7 @@ async function saveReceipt(){
       const {data:pub}=sb.storage.from('receipts').getPublicUrl(fn);
       imageUrl=pub.publicUrl;
     }
-    const {error:dbErr}=await sb.from('receipts').insert([{
+    const baseRow={
       vendor,
       date:          document.getElementById('fDate').value||null,
       amount:        amt,
@@ -873,9 +1294,25 @@ async function saveReceipt(){
       project:       document.getElementById('fProj').value.trim(),
       notes:         document.getElementById('fNote').value.trim(),
       image_url:     imageUrl
-    }]);
+    };
+    // *** รายละเอียดใบเสร็จ (ข้อ 5): เวลา/วิธีจ่าย/ยอดก่อนภาษี/ภาษี/รายการสินค้า ***
+    const extraRow={
+      time:           scanExtra?.time||null,
+      payment_method: scanExtra?.payment_method||null,
+      subtotal:       scanExtra?.subtotal??null,
+      tax:            scanExtra?.tax??null,
+      items_json:     scanExtra?.items?.length ? JSON.stringify(scanExtra.items) : null
+    };
+
+    let {error:dbErr}=await sb.from('receipts').insert([{...baseRow,...extraRow}]);
+
+    // *** FIX: ถ้าตารางเก่ายังไม่มีคอลัมน์ใหม่ (ยังไม่ได้รัน SQL อัปเดต) ให้บันทึกแบบไม่มีรายละเอียดย่อยแทน ไม่ให้บันทึกล้มเหลวไปเลย ***
+    if(dbErr&&/column .* does not exist/i.test(dbErr.message||'')){
+      ({error:dbErr}=await sb.from('receipts').insert([baseRow]));
+      if(!dbErr) toast('⚠️ บันทึกสำเร็จ แต่ยังไม่ได้อัปเดตฐานข้อมูล — ไปที่ ⚙️ ตั้งค่า รัน SQL ใหม่เพื่อเก็บรายการสินค้าได้',true);
+    }
     if(dbErr) throw dbErr;
-    toast('✅ บันทึกเรียบร้อยแล้ว!');
+    if(!/⚠️/.test(document.getElementById('toast').textContent||'')) toast('✅ บันทึกเรียบร้อยแล้ว!');
     closeForm();
   }catch(e){
     console.error(e);
