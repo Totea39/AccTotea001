@@ -18,7 +18,7 @@ html,body{font-family:'Sarabun',-apple-system,BlinkMacSystemFont,sans-serif;back
 .splash-bubbles{position:absolute;inset:0;overflow:hidden;pointer-events:none}
 .bubble{position:absolute;border-radius:50%;opacity:.3;animation:floatBubble 7s ease-in-out infinite}
 @keyframes floatBubble{0%,100%{transform:translateY(0) rotate(0deg)}33%{transform:translateY(-22px) rotate(4deg)}66%{transform:translateY(-11px) rotate(-3deg)}}
-#splashBtn{width:190px;height:190px;border-radius:50%;border:5px solid #C8873A;background:#FFFDF8;cursor:pointer;overflow:hidden;padding:0;box-shadow:0 14px 44px rgba(155,94,30,.35),0 0 0 14px rgba(200,135,58,.12);animation:pulseLogo 3s ease-in-out infinite;transition:transform .15s ease;-webkit-appearance:none;appearance:none}
+#splashBtn{width:clamp(140px,46vw,190px);height:clamp(140px,46vw,190px);border-radius:50%;border:5px solid #C8873A;background:#FFFDF8;cursor:pointer;overflow:hidden;padding:0;box-shadow:0 14px 44px rgba(155,94,30,.35),0 0 0 14px rgba(200,135,58,.12);animation:pulseLogo 3s ease-in-out infinite;transition:transform .15s ease;-webkit-appearance:none;appearance:none}
 #splashBtn:active{transform:scale(.94)}
 #splashBtn img{width:100%;height:100%;object-fit:cover;display:block}
 @keyframes pulseLogo{0%,100%{box-shadow:0 14px 44px rgba(155,94,30,.35),0 0 0 14px rgba(200,135,58,.12)}50%{box-shadow:0 18px 52px rgba(155,94,30,.45),0 0 0 22px rgba(200,135,58,.07)}}
@@ -36,11 +36,11 @@ html,body{font-family:'Sarabun',-apple-system,BlinkMacSystemFont,sans-serif;back
 .header-logo img{width:100%;height:100%;object-fit:cover}
 .header-info{flex:1;min-width:0}
 .header-brand{font-size:10px;font-weight:700;color:#9B7050;letter-spacing:1.5px;text-transform:uppercase}
-.header-total{font-size:22px;font-weight:800;color:#5C3E1E;line-height:1.1}
+.header-total{font-size:clamp(17px,5.5vw,22px);font-weight:800;color:#5C3E1E;line-height:1.1;overflow-wrap:anywhere}
 .header-count{font-size:11px;color:#9B7050;font-weight:600;flex-shrink:0}
 
 /* PAGES */
-.page{display:none;padding:14px 16px;min-height:calc(100vh - 148px)}
+.page{display:none;padding:14px 16px calc(108px + env(safe-area-inset-bottom,0px));min-height:calc(100vh - 148px)}
 .page.active{display:block}
 .section-title{font-size:15px;font-weight:800;color:#3D2810;margin-bottom:14px;display:flex;align-items:center;gap:8px}
 
@@ -74,7 +74,7 @@ html,body{font-family:'Sarabun',-apple-system,BlinkMacSystemFont,sans-serif;back
 .select{flex:1;border:2px solid #DDD0C0;border-radius:14px;padding:11px 32px 11px 12px;background:#FFFDF8 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239B7050' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 12px center;font-size:14px;font-weight:700;color:#3D2810;font-family:inherit;-webkit-appearance:none;appearance:none;cursor:pointer}
 .total-card{background:linear-gradient(135deg,#C8873A,#9B5E1E);border-radius:22px;padding:20px;color:#fff;margin-bottom:18px;box-shadow:0 6px 22px rgba(155,94,30,.3)}
 .total-card-label{font-size:11px;font-weight:700;opacity:.8;letter-spacing:1px;text-transform:uppercase}
-.total-card-amount{font-size:34px;font-weight:800;margin-top:4px}
+.total-card-amount{font-size:clamp(24px,8vw,34px);font-weight:800;margin-top:4px;overflow-wrap:anywhere}
 .total-card-sub{font-size:12px;opacity:.75;margin-top:4px}
 .cat-bar{margin-bottom:16px}
 .cat-bar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
@@ -118,8 +118,9 @@ html,body{font-family:'Sarabun',-apple-system,BlinkMacSystemFont,sans-serif;back
 .btn-sm{padding:10px 14px;font-size:13px;border-radius:13px;margin-bottom:0}
 
 /* FAB */
-.fab{position:fixed;bottom:88px;right:20px;z-index:200;width:62px;height:62px;border-radius:31px;background:linear-gradient(135deg,#C8873A,#9B5E1E);color:#fff;font-size:30px;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;box-shadow:0 8px 24px rgba(155,94,30,.45);transition:transform .15s;line-height:1}
+.fab{position:fixed;bottom:calc(88px + env(safe-area-inset-bottom,0px));right:20px;z-index:200;width:62px;height:62px;border-radius:31px;background:linear-gradient(135deg,#C8873A,#9B5E1E);color:#fff;font-size:30px;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;box-shadow:0 8px 24px rgba(155,94,30,.45);transition:transform .15s,opacity .2s;line-height:1}
 .fab:active{transform:scale(.9)}
+.fab.fab-hidden{display:none}
 
 /* NAV */
 .nav{position:fixed;bottom:0;left:0;right:0;background:rgba(253,248,240,.97);backdrop-filter:blur(16px);border-top:2px solid #EDD8BB;display:flex;height:76px;z-index:300;padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -170,7 +171,7 @@ html,body{font-family:'Sarabun',-apple-system,BlinkMacSystemFont,sans-serif;back
 .detail-actions{margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
 /* TOAST */
-#toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:30px;font-size:14px;font-weight:700;z-index:9999;display:none;box-shadow:0 4px 18px rgba(0,0,0,.2);white-space:nowrap;max-width:85vw;text-align:center;color:#fff}
+#toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:12px 22px;border-radius:22px;font-size:13.5px;font-weight:700;z-index:9999;display:none;box-shadow:0 4px 18px rgba(0,0,0,.2);white-space:normal;overflow-wrap:break-word;max-width:88vw;width:max-content;text-align:center;color:#fff;line-height:1.4}
 
 /* UTILS */
 ::-webkit-scrollbar{width:4px}
@@ -200,7 +201,7 @@ html,body{font-family:'Sarabun',-apple-system,BlinkMacSystemFont,sans-serif;back
     </div>
     <div class="header-info">
       <div class="header-brand">Gentle Journey</div>
-      <div class="header-total" id="hdrTotal">฿0.00</div>
+      <div class="header-total" id="hdrTotal">฿ 0.00</div>
     </div>
     <div class="header-count" id="hdrCount">0 รายการ</div>
   </div>
@@ -258,7 +259,12 @@ html,body{font-family:'Sarabun',-apple-system,BlinkMacSystemFont,sans-serif;back
       </div>
       <div class="form-group">
         <label class="form-label">Google Gemini API Key</label>
-        <input type="password" id="cfg-gem" class="input" placeholder="AIza...">
+        <input type="password" id="cfg-gem" class="input" placeholder="AIza... หรือ AQ....">
+        <div style="font-size:11px;color:#9B7050;margin-top:6px;line-height:1.6">
+          💡 คีย์ที่ขึ้นต้นด้วย <b>AIza</b> หรือ <b>AQ.</b> ใช้ได้ทั้งคู่ — สร้างได้ที่
+          <a href="https://aistudio.google.com/apikey" target="_blank" style="color:#C8873A">aistudio.google.com/apikey</a>.
+          ถ้าสแกนแล้ว AI แจ้ง error ให้ลองกดถ่าย/เลือกรูปใหม่อีกครั้งแล้วดูข้อความ error ที่ขึ้น (จะบอกสาเหตุตรงๆ เช่น Key ผิด, โควต้าหมด, หรือ API ยังไม่เปิดใช้)
+        </div>
       </div>
       <button class="btn btn-primary" onclick="saveSettings()">💾 บันทึกการตั้งค่า</button>
     </div>
@@ -349,22 +355,22 @@ html,body{font-family:'Sarabun',-apple-system,BlinkMacSystemFont,sans-serif;back
     <div class="form-group">
       <label class="form-label">💱 สกุลเงิน</label>
       <select id="fCurr" class="input select" onchange="calcTHB()" style="padding:11px 12px">
-        <option value="THB">🇹🇭 THB - บาทไทย</option>
-        <option value="USD">🇺🇸 USD - ดอลลาร์สหรัฐ</option>
-        <option value="EUR">🇪🇺 EUR - ยูโร</option>
-        <option value="JPY">🇯🇵 JPY - เยนญี่ปุ่น</option>
-        <option value="GBP">🇬🇧 GBP - ปอนด์สเตอลิงก์</option>
-        <option value="CHF">🇨🇭 CHF - ฟรังก์สวิส</option>
-        <option value="AUD">🇦🇺 AUD - ดอลลาร์ออสเตรเลีย</option>
-        <option value="CAD">🇨🇦 CAD - ดอลลาร์แคนาดา</option>
-        <option value="CNY">🇨🇳 CNY - หยวนจีน</option>
-        <option value="KRW">🇰🇷 KRW - วอนเกาหลีใต้</option>
-        <option value="HKD">🇭🇰 HKD - ดอลลาร์ฮ่องกง</option>
-        <option value="TWD">🇹🇼 TWD - ดอลลาร์ไต้หวัน</option>
-        <option value="SGD">🇸🇬 SGD - ดอลลาร์สิงคโปร์</option>
-        <option value="MYR">🇲🇾 MYR - ริงกิตมาเลเซีย</option>
-        <option value="IDR">🇮🇩 IDR - รูเปียห์อินโดนีเซีย</option>
-        <option value="VND">🇻🇳 VND - ดงเวียดนาม</option>
+        <option value="THB">🇹🇭 THB</option>
+        <option value="USD">🇺🇸 USD</option>
+        <option value="EUR">🇪🇺 EUR</option>
+        <option value="JPY">🇯🇵 JPY</option>
+        <option value="GBP">🇬🇧 GBP</option>
+        <option value="CHF">🇨🇭 CHF</option>
+        <option value="AUD">🇦🇺 AUD</option>
+        <option value="CAD">🇨🇦 CAD</option>
+        <option value="CNY">🇨🇳 CNY</option>
+        <option value="KRW">🇰🇷 KRW</option>
+        <option value="HKD">🇭🇰 HKD</option>
+        <option value="TWD">🇹🇼 TWD</option>
+        <option value="SGD">🇸🇬 SGD</option>
+        <option value="MYR">🇲🇾 MYR</option>
+        <option value="IDR">🇮🇩 IDR</option>
+        <option value="VND">🇻🇳 VND</option>
       </select>
     </div>
     <div class="form-group">
@@ -508,6 +514,8 @@ function goPage(pid,btn){
   document.getElementById(pid).classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
+  // *** FIX: ซ่อนปุ่ม + ในหน้าตั้งค่า เพราะไปทับ SQL box และข้อความท้ายหน้า ***
+  document.getElementById('fabBtn').classList.toggle('fab-hidden', pid==='page-settings');
   if(pid==='page-summary') renderSummary();
   if(pid==='page-files')   renderFiles();
 }
@@ -592,7 +600,7 @@ function openDetail(id){
     ['💱 สกุลเงิน',  r.currency||'THB'],
     ['💵 ยอดเงิน',   fmt(r.amount)+' '+(r.currency||'THB')],
     ['📈 อัตราแลก',  r.currency&&r.currency!=='THB' ? `1 ${r.currency} = ${r.exchange_rate} ฿` : '-'],
-    ['🇹🇭 ยอดในบาท','฿'+fmt(r.amount_thb||r.amount)],
+    ['🇹🇭 ยอดในบาท',b(r.amount_thb||r.amount)],
     ['📁 โปรเจกต์',  r.project||'-'],
     ['📝 หมายเหตุ',  r.notes||'-']
   ];
@@ -702,8 +710,23 @@ function handleImg(file){
 }
 
 // ==========================================
-// GEMINI AI — FIXED
+// GEMINI AI — FIXED (2026-06: gemini-2.0-flash ถูกปลดระวางแล้ว 1 มิ.ย. 2026
+// เปลี่ยนเป็น gemini-3.5-flash + บังคับ JSON schema output เพื่อความแม่นยำสูงสุด)
 // ==========================================
+const GEMINI_MODEL='gemini-3.5-flash';
+const RECEIPT_SCHEMA={
+  type:'OBJECT',
+  properties:{
+    vendor:{type:'STRING',description:'ชื่อร้านค้าหรือรายการ'},
+    date:{type:'STRING',description:'วันที่บนใบเสร็จ รูปแบบ YYYY-MM-DD เท่านั้น ถ้าไม่พบให้เว้นว่าง'},
+    amount:{type:'NUMBER',description:'ยอดเงินรวมสุดท้ายที่ต้องจ่าย (ตัวเลขล้วน ไม่มีลูกน้ำ)'},
+    currency:{type:'STRING',description:'รหัสสกุลเงิน 3 ตัวอักษร เช่น THB, USD, JPY'},
+    category:{type:'STRING',enum:['อาหาร','เดินทาง','ที่พัก','บริการ','ช้อปปิ้ง','สันทนาการ','สุขภาพ','อื่นๆ']},
+    notes:{type:'STRING',description:'สรุปรายการสั้นๆ 1 บรรทัด'}
+  },
+  required:['vendor','amount']
+};
+
 async function scanGemini(b64full){
   if(!cfg.gem){
     toast('⚠️ ไม่มี Gemini Key — กรอกข้อมูลเองได้เลย',true);
@@ -715,33 +738,53 @@ async function scanGemini(b64full){
   try{
     // *** FIX: ตัด data URI prefix ออก ***
     const b64data=b64full.split(',')[1];
-    if(!b64data) throw new Error('Bad base64');
+    if(!b64data) throw new Error('แปลงรูปภาพไม่สำเร็จ');
 
-    const prompt=`คุณคือ AI สแกนใบเสร็จ ให้ดึงข้อมูลออกมาแล้วตอบ JSON เท่านั้น ห้ามมี text หรือ markdown อื่น:
-{"vendor":"ชื่อร้านหรือรายการ","date":"YYYY-MM-DD หรือ null","amount":ตัวเลขยอดสุดท้าย,"currency":"THB หรือ USD หรือสกุลที่พบ","category":"อาหาร|เดินทาง|ที่พัก|บริการ|ช้อปปิ้ง|สันทนาการ|สุขภาพ|อื่นๆ","notes":"สรุปสั้น"}`;
+    const prompt=`คุณคือ AI สแกนใบเสร็จ/บิล ดึงข้อมูลจากภาพนี้ให้แม่นยำที่สุด ใช้ยอดรวมสุดท้าย (Grand Total / ยอดสุทธิ) ไม่ใช่ยอดก่อนหักส่วนลด หากเป็นใบเสร็จภาษาไทยให้ระบุ currency เป็น THB`;
 
+    // *** FIX: ใช้ ?key= เป็น query parameter (ใช้ได้ทั้งคีย์รูปแบบเก่า AIza... และรูปแบบใหม่ AQ.... ) ***
     const res=await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${cfg.gem}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(cfg.gem)}`,
       {
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
           contents:[{parts:[{text:prompt},{inline_data:{mime_type:'image/jpeg',data:b64data}}]}],
-          generationConfig:{temperature:.1,maxOutputTokens:512}
+          generationConfig:{
+            maxOutputTokens:2048,
+            thinkingConfig:{thinkingLevel:'low'},
+            responseMimeType:'application/json',
+            responseSchema:RECEIPT_SCHEMA
+          }
         })
       }
     );
-    if(!res.ok) throw new Error('Gemini HTTP '+res.status);
+
+    if(!res.ok){
+      // *** FIX: ดึงข้อความ error จริงจาก Google มาแสดง แทนการขึ้น error เฉยๆ ***
+      const errBody=await res.json().catch(()=>null);
+      const apiMsg=errBody?.error?.message||'';
+      if(res.status===400&&/API key not valid|API_KEY_INVALID/i.test(apiMsg)) throw new Error('API Key ไม่ถูกต้อง — ตรวจสอบใน ⚙️ ตั้งค่าอีกครั้ง');
+      if(res.status===403) throw new Error('Key ถูกปฏิเสธ (403) — เช็คว่าเปิดใช้ Generative Language API และไม่ได้ตั้งข้อจำกัด Referrer ใน Google Cloud Console');
+      if(res.status===404) throw new Error('ไม่พบโมเดล AI (404) — Google อาจเปลี่ยนชื่อรุ่นโมเดลอีกครั้ง');
+      if(res.status===429) throw new Error('ใช้งานเกินโควต้าฟรีรายวัน/รายนาที (429) — รอสักครู่แล้วลองใหม่');
+      throw new Error((apiMsg||('Gemini HTTP '+res.status)).slice(0,100));
+    }
 
     const data=await res.json();
-    // *** FIX: ดึง text อย่างปลอดภัย ***
-    const parts=data?.candidates?.[0]?.content?.parts;
-    if(!parts?.length) throw new Error('No Gemini response');
-    const raw=parts.map(p=>p.text||'').join('');
 
-    // *** FIX: ดึง JSON ด้วย regex แทน JSON.parse ตรงๆ ***
-    const m=raw.match(/\{[\s\S]*?\}/);
-    if(!m) throw new Error('No JSON in response: '+raw.slice(0,120));
+    // เช็คว่าโดนบล็อกด้วย Safety Filter หรือไม่
+    const finishReason=data?.candidates?.[0]?.finishReason;
+    if(finishReason==='SAFETY'||finishReason==='PROHIBITED_CONTENT') throw new Error('ภาพถูกระบบความปลอดภัยของ Google บล็อก ลองถ่ายใหม่');
+
+    // *** FIX: กรอง part ที่เป็น "thought" (ความคิด AI ภายใน) ออกก่อน ดึงเฉพาะ text จริง ***
+    const parts=data?.candidates?.[0]?.content?.parts;
+    if(!parts?.length) throw new Error('AI ไม่ตอบกลับข้อมูล (เปล่า) ลองถ่ายใหม่ให้ภาพชัดขึ้น');
+    const raw=parts.filter(p=>!p.thought).map(p=>p.text||'').join('');
+
+    // *** FIX: ดึง JSON ด้วย regex เป็น fallback เผื่อมี text แทรกแม้ตั้ง JSON mode แล้ว ***
+    const m=raw.match(/\{[\s\S]*\}/);
+    if(!m) throw new Error('AI ไม่ได้ส่ง JSON กลับมา: '+raw.slice(0,100));
     const r=JSON.parse(m[0]);
 
     document.getElementById('fVendor').value=r.vendor||'';
@@ -758,7 +801,8 @@ async function scanGemini(b64full){
     toast('✅ สแกนสำเร็จ! ตรวจสอบข้อมูลแล้วกดบันทึก');
   }catch(e){
     console.error('Gemini fail:',e);
-    toast('⚠️ AI สแกนผิดพลาด กรอกเองได้เลย',true);
+    // *** FIX: แสดง error จริงใน toast เพื่อช่วยวินิจฉัยปัญหา (ไม่ใช่ข้อความลอยๆ) ***
+    toast('⚠️ '+(e.message||'AI สแกนผิดพลาด')+' — กรอกเองได้เลย',true);
     document.getElementById('fDate').value=today();
   }finally{
     document.getElementById('aiLoad').style.display='none';
@@ -778,12 +822,12 @@ function calcTHB(){
 
   if(curr==='THB'){
     rRow.style.display='none';
-    disp.textContent=amt>0?'฿'+fmtN(amt):'— กรอกยอดเงิน';
+    disp.textContent=amt>0?b(amt):'— กรอกยอดเงิน';
   }else{
     rRow.style.display='block';
     if(amt>0&&rate>0){
       const thb=amt*rate;
-      disp.textContent=`${fmtN(amt)} ${curr} × ${rate} = ฿${fmtN(thb)}`;
+      disp.textContent=`${fmtN(amt)} ${curr} × ${rate} = ${b(thb)}`;
     }else if(amt>0){
       disp.textContent=`${fmtN(amt)} ${curr} × ? = ? ฿`;
     }else{
@@ -901,7 +945,7 @@ function renderList(){
         </div>
       </div>
       <div class="item-right">
-        <div class="item-amount">฿${fmt(thb)}</div>
+        <div class="item-amount">${b(thb)}</div>
         ${isFx?`<div class="item-orig">${fmt(r.amount)} ${r.currency}</div>`:''}
       </div>
     </div>`;
@@ -910,7 +954,7 @@ function renderList(){
 
 function updateHeader(){
   const total=allRec.reduce((s,r)=>s+parseFloat(r.amount_thb||r.amount||0),0);
-  document.getElementById('hdrTotal').textContent='฿'+fmt(total);
+  document.getElementById('hdrTotal').textContent=b(total);
   document.getElementById('hdrCount').textContent=allRec.length+' รายการ';
 }
 
@@ -948,7 +992,7 @@ function renderSummary(){
   document.getElementById('summaryWrap').innerHTML=`
     <div class="total-card">
       <div class="total-card-label">ยอดรวม — ${period}</div>
-      <div class="total-card-amount">฿${fmt(total)}</div>
+      <div class="total-card-amount">${b(total)}</div>
       <div class="total-card-sub">${list.length} รายการ</div>
     </div>
     <div class="section-title">📊 แยกตามหมวดหมู่</div>
@@ -962,7 +1006,7 @@ function renderSummary(){
             <span style="width:28px;height:28px;background:${cat.bg};border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:15px">${cat.icon}</span>
             ${cat.id}
           </div>
-          <div class="cat-bar-amount">฿${fmt(v)} <span style="font-size:11px;color:#9B7050">(${pct}%)</span></div>
+          <div class="cat-bar-amount">${b(v)} <span style="font-size:11px;color:#9B7050">(${pct}%)</span></div>
         </div>
         <div class="bar-track"><div class="bar-fill" style="width:${bw}%;background:${cat.color}"></div></div>
       </div>`;
@@ -977,7 +1021,7 @@ function renderSummary(){
           <div class="item-vendor">${r.vendor||'-'}</div>
           <div class="item-meta"><span>${r.date||''}</span></div>
         </div>
-        <div class="item-right"><div class="item-amount">฿${fmt(r.amount_thb||r.amount)}</div></div>
+        <div class="item-right"><div class="item-amount">${b(r.amount_thb||r.amount)}</div></div>
       </div>`;
     }).join('')}
     ${list.length>20?`<div style="text-align:center;padding:12px;color:#9B7050;font-size:13px">...และอีก ${list.length-20} รายการ</div>`:''}
@@ -1006,12 +1050,12 @@ function renderFiles(){
         <div class="project-name">📁 ${nm}</div>
         <div class="project-count">${recs.length} ใบ</div>
       </div>
-      <div class="project-total">฿${fmt(tot)}</div>
+      <div class="project-total">${b(tot)}</div>
       <div class="project-items">
         ${recs.slice(0,3).map(r=>`
           <div class="project-item-row">
             <span>${r.vendor||'-'} ${r.date?`(${r.date})`:''}  </span>
-            <span>฿${fmt(r.amount_thb||r.amount)}</span>
+            <span>${b(r.amount_thb||r.amount)}</span>
           </div>`).join('')}
         ${recs.length>3?`<div style="font-size:11px;color:#C8873A;padding-top:5px;font-weight:700">...และอีก ${recs.length-3} รายการ</div>`:''}
       </div>
@@ -1041,7 +1085,7 @@ function viewProj(nm){
           <div class="item-vendor">${r.vendor||'-'}</div>
           <div class="item-meta"><span class="cat-pill" style="background:${cat.bg};color:${cat.color}">${cat.icon} ${r.category||'อื่นๆ'}</span> ${r.date?`<span>📅 ${r.date}</span>`:''}</div>
         </div>
-        <div class="item-right"><div class="item-amount">฿${fmt(r.amount_thb||r.amount)}</div></div>
+        <div class="item-right"><div class="item-amount">${b(r.amount_thb||r.amount)}</div></div>
       </div>`;
     }).join('')}`;
 }
@@ -1092,7 +1136,10 @@ function fbCopy(t){
 // UTILS
 // ==========================================
 function fmt(n){return parseFloat(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}
-function fmtN(n){return parseFloat(n||0).toLocaleString('en-US',{minimumFractionDigits:2})}
+// *** FIX: เพิ่ม maximumFractionDigits ป้องกันเลขทศนิยมเพี้ยนจาก floating point เช่น 45,061,727.985 ***
+function fmtN(n){return parseFloat(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}
+// *** FIX: เว้นช่องว่างบางๆ หลังสัญลักษณ์ ฿ กัน glyph ชนกับตัวเลขตัวหนาในบางฟอนต์ ***
+function b(n){return '฿\u2009'+fmt(n)}
 
 // ==========================================
 // INIT
