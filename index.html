@@ -1097,37 +1097,8 @@ function updateImageFilter(){
   const prevImg=document.getElementById('prevImg');
   if(prevImg && prevImg.src){
     prevImg.style.filter=`contrast(${imgFilterState.contrast}%) brightness(${imgFilterState.brightness}%) saturate(${imgFilterState.saturate}%)`;
-    
-    // 🔥 บันทึก blob ที่มีการแปลงแล้ว → จะถูกส่งไปบันทึก
-    applyFilterToCanvas();
+    // ❌ ไม่เรียก applyFilterToCanvas ตรงนี้ — รอให้ user กดปุ่ม "✅ ยืนยันและสแกน" เท่านั้น
   }
-}
-
-// ฟังชันสำหรับ apply filter ลง canvas แล้วบันทึกเป็น blob
-function applyFilterToCanvas(){
-  return new Promise((resolve)=>{
-    if(!imgB64){
-      imgFilteredBlob=null;
-      resolve();
-      return;
-    }
-    
-    const img=new Image();
-    img.onload=()=>{
-      const canvas=document.createElement('canvas');
-      canvas.width=img.naturalWidth;
-      canvas.height=img.naturalHeight;
-      const ctx=canvas.getContext('2d');
-      ctx.filter=`contrast(${imgFilterState.contrast}%) brightness(${imgFilterState.brightness}%) saturate(${imgFilterState.saturate}%)`;
-      ctx.drawImage(img,0,0);
-      
-      canvas.toBlob(blob=>{
-        imgFilteredBlob=blob; // ← บันทึก blob ที่มี filter
-        resolve();
-      },'image/jpeg',.68);
-    };
-    img.src=imgB64;
-  });
 }
 
 // ฟังชันรีเซ็ต slider
@@ -1183,9 +1154,8 @@ async function confirmFilterAndScan(){
 }
 
 function skipProcessing(workCanvas,quad){
-  document.getElementById('formTitle').textContent='📷 ประมวลผลภาพ';
-  document.getElementById('aiLoad').style.display='block';
-  setAiStatus('⏩ ข้ามการแปลงสี ใช้รูปเดิม...');
+  document.getElementById('formTitle').textContent='📷 ปรับแสง/สี ของรูป';
+  document.getElementById('aiLoad').style.display='none'; // ❌ ไม่แสดง loading
   document.getElementById('prevBox').style.display='none';
   document.getElementById('adjustFiltersBox').style.display='none';
   document.getElementById('btnSave').disabled=true;
@@ -1206,12 +1176,13 @@ function skipProcessing(workCanvas,quad){
       document.getElementById('prevImg').src=b64full;
       document.getElementById('prevBox').style.display='block';
       document.getElementById('adjustFiltersBox').style.display='block'; // ← แสดง slider
+      resetImageFilter(); // รีเซต slider
       updateImageFilter(); // ใช้ค่า slider ที่ผู้ใช้ตั้ง
 
       finalCanvas.toBlob(blob=>{
         imgBlob=blob;
-        setAiStatus('🤖 กำลังสแกน OCR...');
-        scanGemini(b64full);
+        document.getElementById('btnSave').disabled=false;
+        // ❌ ลบการเรียก scanGemini ออก — รอให้ user กดปุ่ม "✅ ยืนยันและสแกน" แทน
       },'image/jpeg',.68);
     }catch(e){
       console.error('Skip processing failed:',e);
