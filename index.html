@@ -1144,34 +1144,40 @@ function resetImageFilter(){
 
 // 🔥 ปุ่มยืนยันและสแกน — บันทึกภาพที่ปรับแล้ว แล้วส่ง AI วิเคราะห์
 async function confirmFilterAndScan(){
-  document.getElementById('formTitle').textContent='📷 กำลังเตรียมภาพ';
   document.getElementById('adjustFiltersBox').style.display='none';
   document.getElementById('aiLoad').style.display='block';
   setAiStatus('📸 กำลังบันทึกภาพที่ปรับแล้ว...');
-  document.getElementById('btnSave').disabled=true;
   
   try{
-    // รอให้ apply filter เสร็จ
-    await applyFilterToCanvas();
-    
-    // บันทึก blob ที่มี filter เป็น b64 ใหม่ เพื่อส่ง AI
-    const filteredBlob = imgFilteredBlob || imgBlob;
-    if(filteredBlob){
-      const reader=new FileReader();
-      reader.onload=()=>{
-        imgB64=reader.result; // อัปเดต imgB64 เป็นภาพที่มี filter
-        imgBlob=filteredBlob; // อัปเดต imgBlob เป็นภาพที่มี filter
+    // สร้าง canvas ใหม่ที่มี filter แล้ว
+    const img=new Image();
+    img.onload=()=>{
+      const canvas=document.createElement('canvas');
+      canvas.width=img.naturalWidth;
+      canvas.height=img.naturalHeight;
+      const ctx=canvas.getContext('2d');
+      ctx.filter=`contrast(${imgFilterState.contrast}%) brightness(${imgFilterState.brightness}%) saturate(${imgFilterState.saturate}%)`;
+      ctx.drawImage(img,0,0);
+      
+      // เก็บเป็น base64 เพื่อส่ง AI
+      const filteredB64=canvas.toDataURL('image/jpeg',.68);
+      
+      // เก็บเป็น blob เพื่อบันทึก
+      canvas.toBlob(blob=>{
+        imgBlob=blob; // อัปเดต imgBlob เป็นภาพที่มี filter
+        imgB64=filteredB64; // อัปเดต imgB64 เป็นภาพที่มี filter
         
         setAiStatus('🤖 กำลังสแกน OCR ด้วย AI...');
-        scanGemini(imgB64); // ส่งภาพที่ปรับแล้วให้ AI
-      };
-      reader.readAsDataURL(filteredBlob);
-    }
+        document.getElementById('btnSave').disabled=false;
+        scanGemini(filteredB64); // ✅ ส่งภาพที่ปรับแล้วให้ AI
+      },'image/jpeg',.68);
+    };
+    img.src=imgB64; // ใช้ imgB64 เดิม (ยังไม่มี filter)
+    
   }catch(e){
     console.error('Confirm filter and scan failed:',e);
     document.getElementById('aiLoad').style.display='none';
     document.getElementById('adjustFiltersBox').style.display='block';
-    document.getElementById('btnSave').disabled=false;
     toast('เตรียมภาพผิดพลาด ลองใหม่อีกครั้ง',true);
   }
 }
@@ -1299,9 +1305,8 @@ function warpPerspective(srcCanvas,quad,outW,outH){
 // ไม่ใช้อัลกอริทึมพลิกแพลงแบบเดิม เพื่อให้ข้อมูลยังอ่านได้ชัดเจน
 
 function processScannedImage(workCanvas,quad){
-  document.getElementById('formTitle').textContent='📷 กำลังประมวลผลภาพ';
-  document.getElementById('aiLoad').style.display='block';
-  setAiStatus('🪄 กำลังปรับภาพให้ตรง...');
+  document.getElementById('formTitle').textContent='📷 ปรับแสง/สี ของรูป';
+  document.getElementById('aiLoad').style.display='none'; // ❌ ไม่แสดง loading
   document.getElementById('prevBox').style.display='none';
   document.getElementById('adjustFiltersBox').style.display='none';
   document.getElementById('btnSave').disabled=true;
@@ -1329,8 +1334,7 @@ function processScannedImage(workCanvas,quad){
 
       finalCanvas.toBlob(blob=>{
         imgBlob=blob;
-        // *** 2.3 ส่งภาพที่ผ่านการปรับแต่ง+บีบอัดแล้วเท่านั้น ไปวิเคราะห์ OCR ***
-        scanGemini(b64full);
+        // ❌ ลบการเรียก scanGemini ออก — รอให้ user กดปุ่ม "✅ ยืนยันและสแกน" แทน
       },'image/jpeg',.68);
     }catch(e){
       console.error('Process scanned image failed:',e);
