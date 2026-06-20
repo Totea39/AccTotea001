@@ -396,6 +396,25 @@ html,body{font-family:'Sarabun',-apple-system,BlinkMacSystemFont,sans-serif;back
   <div class="sheet-title" id="formTitle">📝 รายละเอียดใบเสร็จ</div>
 
   <div class="preview-box" id="prevBox"><img id="prevImg" src="" alt="preview" onclick="openLightbox(this.src)"></div>
+  
+  <!-- ข้อ 4: Slider ปรับสี/แสง/ความคมชัด -->
+  <div id="adjustFiltersBox" style="display:none;background:#f5f1ed;padding:14px;border-radius:10px;margin-bottom:14px">
+    <div style="font-size:12px;color:#9B7050;margin-bottom:10px;font-weight:600">✨ ปรับแสง / สี / ความคมชัด</div>
+    <div class="form-group">
+      <label class="form-label" style="font-size:12px">📐 ความคมชัด: <span id="contrastVal">120</span>%</label>
+      <input type="range" id="contrastSlider" class="input" min="80" max="160" value="120" step="5" oninput="updateImageFilter();document.getElementById('contrastVal').textContent=this.value" style="height:4px;padding:0">
+    </div>
+    <div class="form-group">
+      <label class="form-label" style="font-size:12px">☀️ ความสว่าง: <span id="brightnessVal">100</span>%</label>
+      <input type="range" id="brightnessSlider" class="input" min="80" max="130" value="100" step="2" oninput="updateImageFilter();document.getElementById('brightnessVal').textContent=this.value" style="height:4px;padding:0">
+    </div>
+    <div class="form-group">
+      <label class="form-label" style="font-size:12px">🎨 ความอิ่มสี: <span id="saturateVal">100</span>%</label>
+      <input type="range" id="saturateSlider" class="input" min="80" max="130" value="100" step="2" oninput="updateImageFilter();document.getElementById('saturateVal').textContent=this.value" style="height:4px;padding:0">
+    </div>
+    <button class="btn btn-secondary" onclick="resetImageFilter()" style="font-size:12px;padding:8px 12px;width:100%">🔄 ตั้งค่าเดิม</button>
+  </div>
+  
   <div class="ai-loading" id="aiLoad">
     <div class="ai-dots"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div></div>
     <div class="ai-text" id="aiStatusText">🤖 AI กำลังอ่านใบเสร็จ...</div>
@@ -1057,8 +1076,75 @@ function confirmAdjust(){
   if(!adjustState) return;
   const {workCanvas,quad}=adjustState;
   closeAdjustScreen();
-  processScannedImage(workCanvas,quad);
+  skipProcessing(workCanvas,quad); // ข้ามการแปลงสี/แสง ใช้รูปเดิม
 }
+
+// ฟังชันข้ามการแปลงสี/แสง — ใช้รูปเดิมเลย
+// ข้อ 4: Slider ปรับสี/แสง/ความคมชัด แบบ real-time
+let imgFilterState={contrast:120,brightness:100,saturate:100};
+
+function updateImageFilter(){
+  imgFilterState.contrast=parseInt(document.getElementById('contrastSlider').value);
+  imgFilterState.brightness=parseInt(document.getElementById('brightnessSlider').value);
+  imgFilterState.saturate=parseInt(document.getElementById('saturateSlider').value);
+  
+  const prevImg=document.getElementById('prevImg');
+  if(prevImg && prevImg.src){
+    prevImg.style.filter=`contrast(${imgFilterState.contrast}%) brightness(${imgFilterState.brightness}%) saturate(${imgFilterState.saturate}%)`;
+  }
+}
+
+function resetImageFilter(){
+  document.getElementById('contrastSlider').value=120;
+  document.getElementById('brightnessSlider').value=100;
+  document.getElementById('saturateSlider').value=100;
+  document.getElementById('contrastVal').textContent='120';
+  document.getElementById('brightnessVal').textContent='100';
+  document.getElementById('saturateVal').textContent='100';
+  imgFilterState={contrast:120,brightness:100,saturate:100};
+  updateImageFilter();
+}
+
+function skipProcessing(workCanvas,quad){
+  document.getElementById('formTitle').textContent='📷 ประมวลผลภาพ';
+  document.getElementById('aiLoad').style.display='block';
+  setAiStatus('⏩ ข้ามการแปลงสี ใช้รูปเดิม...');
+  document.getElementById('prevBox').style.display='none';
+  document.getElementById('adjustFiltersBox').style.display='none';
+  document.getElementById('btnSave').disabled=true;
+  openSheet('sheetForm');
+
+  setTimeout(()=>{
+    try{
+      const {w:outW,h:outH}=computeOutputSize(quad);
+      const warped=warpPerspective(workCanvas,quad,outW,outH);
+
+      // ไม่มี filter — ใช้รูปตามที่เป็น
+      const finalCanvas=document.createElement('canvas');
+      finalCanvas.width=outW; finalCanvas.height=outH;
+      finalCanvas.getContext('2d').drawImage(warped,0,0);
+
+      const b64full=finalCanvas.toDataURL('image/jpeg',.68);
+      imgB64=b64full;
+      document.getElementById('prevImg').src=b64full;
+      document.getElementById('prevBox').style.display='block';
+      document.getElementById('adjustFiltersBox').style.display='block'; // ← แสดง slider
+      updateImageFilter(); // ใช้ค่า slider ที่ผู้ใช้ตั้ง
+
+      finalCanvas.toBlob(blob=>{
+        imgBlob=blob;
+        setAiStatus('🤖 กำลังสแกน OCR...');
+        scanGemini(b64full);
+      },'image/jpeg',.68);
+    }catch(e){
+      console.error('Skip processing failed:',e);
+      document.getElementById('aiLoad').style.display='none';
+      document.getElementById('btnSave').disabled=false;
+      toast('ประมวลผลภาพผิดพลาด ลองใหม่อีกครั้ง',true);
+    }
+  },50);
+}
+
 
 // ===== คณิตศาสตร์ Perspective Warp (homography) — ทดสอบความถูกต้องแล้ว =====
 function solveLinearSystem(A,B){
@@ -1146,6 +1232,7 @@ function processScannedImage(workCanvas,quad){
   document.getElementById('aiLoad').style.display='block';
   setAiStatus('🪄 กำลังปรับภาพให้ตรง...');
   document.getElementById('prevBox').style.display='none';
+  document.getElementById('adjustFiltersBox').style.display='none';
   document.getElementById('btnSave').disabled=true;
   openSheet('sheetForm');
 
@@ -1155,20 +1242,19 @@ function processScannedImage(workCanvas,quad){
       const {w:outW,h:outH}=computeOutputSize(quad);
       const warped=warpPerspective(workCanvas,quad,outW,outH);
 
-      setAiStatus('✨ กำลังปรับเบาๆ ให้อ่านง่าย...');
-      // ข้อ 4: ปรับเบาๆ เพื่อให้ข้อมูลอ่านได้ชัดเจน โดยไม่ลบตัวอักษร
-      // ใช้ filter ที่ปลอดภัย: contrast + brightness + saturate เท่านั้น
+      // ไม่ปรับแสงอัตโนมัติ — ให้ผู้ใช้ปรับเอง via slider
       const finalCanvas=document.createElement('canvas');
       finalCanvas.width=outW; finalCanvas.height=outH;
-      const fctx=finalCanvas.getContext('2d');
-      fctx.filter='contrast(135%) brightness(130%) saturate(120%)';
-      fctx.drawImage(warped,0,0);
+      finalCanvas.getContext('2d').drawImage(warped,0,0);
 
       // *** 2.2 บีบอัดเป็น JPEG เล็กที่สุดเท่าที่ยังอ่านง่าย ***
       const b64full=finalCanvas.toDataURL('image/jpeg',.68);
       imgB64=b64full;
       document.getElementById('prevImg').src=b64full;
       document.getElementById('prevBox').style.display='block';
+      document.getElementById('adjustFiltersBox').style.display='block'; // ← แสดง slider ให้ปรับ
+      resetImageFilter(); // รีเซต slider เป็นค่าเดิม
+      updateImageFilter(); // ใช้ค่า slider
 
       finalCanvas.toBlob(blob=>{
         imgBlob=blob;
