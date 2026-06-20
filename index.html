@@ -1102,22 +1102,29 @@ function updateImageFilter(){
 
 // ฟังชันสำหรับ apply filter ลง canvas แล้วบันทึกเป็น blob
 function applyFilterToCanvas(){
-  if(!imgB64) return;
-  
-  const img=new Image();
-  img.onload=()=>{
-    const canvas=document.createElement('canvas');
-    canvas.width=img.naturalWidth;
-    canvas.height=img.naturalHeight;
-    const ctx=canvas.getContext('2d');
-    ctx.filter=`contrast(${imgFilterState.contrast}%) brightness(${imgFilterState.brightness}%) saturate(${imgFilterState.saturate}%)`;
-    ctx.drawImage(img,0,0);
+  return new Promise((resolve)=>{
+    if(!imgB64){
+      imgFilteredBlob=null;
+      resolve();
+      return;
+    }
     
-    canvas.toBlob(blob=>{
-      imgFilteredBlob=blob; // ← บันทึก blob ที่มี filter
-    },'image/jpeg',.68);
-  };
-  img.src=imgB64;
+    const img=new Image();
+    img.onload=()=>{
+      const canvas=document.createElement('canvas');
+      canvas.width=img.naturalWidth;
+      canvas.height=img.naturalHeight;
+      const ctx=canvas.getContext('2d');
+      ctx.filter=`contrast(${imgFilterState.contrast}%) brightness(${imgFilterState.brightness}%) saturate(${imgFilterState.saturate}%)`;
+      ctx.drawImage(img,0,0);
+      
+      canvas.toBlob(blob=>{
+        imgFilteredBlob=blob; // ← บันทึก blob ที่มี filter
+        resolve();
+      },'image/jpeg',.68);
+    };
+    img.src=imgB64;
+  });
 }
 
 function resetImageFilter(){
@@ -1506,6 +1513,9 @@ async function saveReceipt(){
   btn.disabled=true; btn.textContent='⏳ กำลังบันทึก...';
 
   try{
+    // 🔥 รอให้ apply filter เสร็จก่อนบันทึก
+    await applyFilterToCanvas();
+    
     const row={
       vendor,
       date:          document.getElementById('fDate').value||null,
