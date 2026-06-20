@@ -26,7 +26,7 @@ html,body{font-family:'Sarabun',-apple-system,BlinkMacSystemFont,sans-serif;back
 .splash-sub{margin-top:6px;font-size:14px;color:#9B7050;font-weight:600}
 .splash-credit{margin-top:14px;font-size:11px;color:#C0A888;font-weight:600;letter-spacing:.4px}
 
-/* ข้อ 5: ป้ายเวอร์ชั่น มุมบนขวาหน้าแรก */
+/* ข้อ 5: ป้ายเวอร์ชัน มุมบนขวาหน้าแรก */
 .version-badge{position:absolute;top:calc(16px + env(safe-area-inset-top,0px));right:16px;background:rgba(200,135,58,.16);color:#9B5E1E;font-size:11px;font-weight:800;padding:5px 13px;border-radius:20px;letter-spacing:.3px;z-index:2}
 
 /* ข้อ 2: กล่องรหัสผ่านเข้าใช้งาน บนหน้าแรก */
@@ -739,6 +739,7 @@ function resetForm(){
   document.getElementById('fCat').value='อาหาร';
   document.getElementById('thbShow').textContent='— กรอกยอดเงินและอัตราแลกเปลี่ยน';
   document.getElementById('prevBox').style.display='none';
+  document.getElementById('adjustFiltersBox').style.display='none';
   document.getElementById('prevImg').src='';
   document.getElementById('aiLoad').style.display='none';
   const btn=document.getElementById('btnSave');
@@ -746,6 +747,7 @@ function resetForm(){
   document.getElementById('fileCam').value='';
   document.getElementById('fileGal').value='';
   imgBlob=null; imgB64=null;
+  imgFilteredBlob=null; // ← reset filtered image
   scanExtra=null;
   editId=null; // ข้อ 1: เคลียร์โหมดแก้ไขทุกครั้งที่รีเซ็ตฟอร์ม
   calcTHB();
@@ -1082,6 +1084,7 @@ function confirmAdjust(){
 // ฟังชันข้ามการแปลงสี/แสง — ใช้รูปเดิมเลย
 // ข้อ 4: Slider ปรับสี/แสง/ความคมชัด แบบ real-time
 let imgFilterState={contrast:120,brightness:100,saturate:100};
+let imgFilteredBlob=null; // เก็บ blob ที่มีการแปลงแล้ว
 
 function updateImageFilter(){
   imgFilterState.contrast=parseInt(document.getElementById('contrastSlider').value);
@@ -1091,7 +1094,30 @@ function updateImageFilter(){
   const prevImg=document.getElementById('prevImg');
   if(prevImg && prevImg.src){
     prevImg.style.filter=`contrast(${imgFilterState.contrast}%) brightness(${imgFilterState.brightness}%) saturate(${imgFilterState.saturate}%)`;
+    
+    // 🔥 บันทึก blob ที่มีการแปลงแล้ว → จะถูกส่งไปบันทึก
+    applyFilterToCanvas();
   }
+}
+
+// ฟังชันสำหรับ apply filter ลง canvas แล้วบันทึกเป็น blob
+function applyFilterToCanvas(){
+  if(!imgB64) return;
+  
+  const img=new Image();
+  img.onload=()=>{
+    const canvas=document.createElement('canvas');
+    canvas.width=img.naturalWidth;
+    canvas.height=img.naturalHeight;
+    const ctx=canvas.getContext('2d');
+    ctx.filter=`contrast(${imgFilterState.contrast}%) brightness(${imgFilterState.brightness}%) saturate(${imgFilterState.saturate}%)`;
+    ctx.drawImage(img,0,0);
+    
+    canvas.toBlob(blob=>{
+      imgFilteredBlob=blob; // ← บันทึก blob ที่มี filter
+    },'image/jpeg',.68);
+  };
+  img.src=imgB64;
 }
 
 function resetImageFilter(){
@@ -1493,9 +1519,11 @@ async function saveReceipt(){
     };
 
     // อัปโหลดรูปใหม่เฉพาะตอนมีการถ่าย/เลือกรูปจริงๆ (ใช้ได้ทั้งตอนเพิ่มและแก้ไข)
-    if(imgBlob){
+    // 🔥 ใช้ imgFilteredBlob (ที่มีการแปลงแสง/สี) แทน imgBlob (original)
+    const blobToUpload = imgFilteredBlob || imgBlob;
+    if(blobToUpload){
       const fn=`rcpt_${Date.now()}_${Math.random().toString(36).slice(2,7)}.jpg`;
-      const {error:upErr}=await sb.storage.from('receipts').upload(fn,imgBlob,{contentType:'image/jpeg',cacheControl:'3600'});
+      const {error:upErr}=await sb.storage.from('receipts').upload(fn,blobToUpload,{contentType:'image/jpeg',cacheControl:'3600'});
       if(upErr) throw upErr;
       const {data:pub}=sb.storage.from('receipts').getPublicUrl(fn);
       row.image_url=pub.publicUrl;
