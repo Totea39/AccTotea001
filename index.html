@@ -1120,36 +1120,49 @@ async function confirmFilterAndScan(){
   setAiStatus('📸 กำลังบันทึกภาพที่ปรับแล้ว...');
   
   try{
-    // สร้าง canvas ใหม่ที่มี filter แล้ว
-    const img=new Image();
-    img.onload=()=>{
-      const canvas=document.createElement('canvas');
-      canvas.width=img.naturalWidth;
-      canvas.height=img.naturalHeight;
-      const ctx=canvas.getContext('2d');
-      ctx.filter=`contrast(${imgFilterState.contrast}%) brightness(${imgFilterState.brightness}%) saturate(${imgFilterState.saturate}%)`;
-      ctx.drawImage(img,0,0);
-      
-      // เก็บเป็น base64 เพื่อส่ง AI
-      const filteredB64=canvas.toDataURL('image/jpeg',.68);
-      
-      // เก็บเป็น blob เพื่อบันทึก
-      canvas.toBlob(blob=>{
-        imgBlob=blob; // อัปเดต imgBlob เป็นภาพที่มี filter
-        imgB64=filteredB64; // อัปเดต imgB64 เป็นภาพที่มี filter
-        
-        setAiStatus('🤖 กำลังสแกน OCR ด้วย AI...');
-        document.getElementById('btnSave').disabled=false;
-        scanGemini(filteredB64); // ✅ ส่งภาพที่ปรับแล้วให้ AI
-      },'image/jpeg',.68);
-    };
-    img.src=imgB64; // ใช้ imgB64 เดิม (ยังไม่มี filter)
+    // รอให้สร้าง canvas + blob เสร็จ
+    await new Promise((resolve, reject)=>{
+      const img=new Image();
+      img.onerror=()=>reject(new Error('โหลดรูปล้มเหลว'));
+      img.onload=()=>{
+        try{
+          const canvas=document.createElement('canvas');
+          canvas.width=img.naturalWidth;
+          canvas.height=img.naturalHeight;
+          const ctx=canvas.getContext('2d');
+          ctx.filter=`contrast(${imgFilterState.contrast}%) brightness(${imgFilterState.brightness}%) saturate(${imgFilterState.saturate}%)`;
+          ctx.drawImage(img,0,0);
+          
+          // เก็บเป็น base64 เพื่อส่ง AI
+          const filteredB64=canvas.toDataURL('image/jpeg',.68);
+          
+          // 🔥 รอให้ toBlob เสร็จ แล้วค่อยไป scanGemini
+          canvas.toBlob((blob)=>{
+            if(!blob) return reject(new Error('สร้าง blob ล้มเหลว'));
+            
+            imgBlob=blob; // อัปเดต imgBlob เป็นภาพที่มี filter ✅
+            imgB64=filteredB64; // อัปเดต imgB64 เป็นภาพที่มี filter
+            
+            // ตอนนี้ imgBlob มีค่าแน่นอน → ส่ง AI สแกน
+            setAiStatus('🤖 กำลังสแกน OCR ด้วย AI...');
+            document.getElementById('btnSave').disabled=false;
+            scanGemini(filteredB64);
+            
+            resolve();
+          },'image/jpeg',.68);
+        }catch(e){
+          reject(e);
+        }
+      };
+      img.src=imgB64; // ใช้ imgB64 เดิม (ยังไม่มี filter)
+    });
     
   }catch(e){
     console.error('Confirm filter and scan failed:',e);
     document.getElementById('aiLoad').style.display='none';
     document.getElementById('adjustFiltersBox').style.display='block';
-    toast('เตรียมภาพผิดพลาด ลองใหม่อีกครั้ง',true);
+    document.getElementById('btnSave').disabled=false;
+    toast('เตรียมภาพผิดพลาด: '+(e.message||'ลองใหม่อีกครั้ง'),true);
   }
 }
 
