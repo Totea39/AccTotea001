@@ -584,6 +584,11 @@ const ADMIN_PASSWORD='ToteaAdmin2026';
 
 // ข้อ 2: ดึงรหัสผ่านเข้าใช้งานปัจจุบันจาก Supabase (ถ้าดึงไม่ได้ ใช้ค่าเริ่มต้นแทน)
 async function fetchAppPassword(){
+  if(!sb){
+    console.warn('Supabase ยังไม่พร้อม ใช้รหัสผ่านเริ่มต้นแทน');
+    appPassword = DEFAULT_APP_PASSWORD;
+    return;
+  }
   try{
     const {data,error}=await sb.from('app_settings').select('value').eq('key','app_password').maybeSingle();
     if(error) throw error;
