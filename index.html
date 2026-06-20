@@ -565,6 +565,7 @@ function getCat(id){return CATS.find(c=>c.id===id)||CATS[7]}
 // ==========================================
 let sb=null, allRec=[], curFilter='all', selId=null, editId=null;
 let imgBlob=null, imgB64=null;
+let warpedB64Original=null; // เก็บภาพที่ยืดมุมแล้ว (ยังไม่ปรับสี/แสง) ไว้เป็นต้นฉบับสำหรับ bake ตอนยืนยัน
 let scanExtra=null; // {time, payment_method, subtotal, tax, items[]} จากการสแกน AI ครั้งล่าสุด
 let allChat=[], adminUnlocked=false;
 
@@ -744,13 +745,14 @@ function resetForm(){
   document.getElementById('prevBox').style.display='none';
   document.getElementById('adjustFiltersBox').style.display='none';
   document.getElementById('prevImg').src='';
+  document.getElementById('prevImg').style.filter='none';
   document.getElementById('aiLoad').style.display='none';
   const btn=document.getElementById('btnSave');
   btn.disabled=false; btn.textContent='☁️ บันทึกขึ้น Cloud';
   document.getElementById('fileCam').value='';
   document.getElementById('fileGal').value='';
   imgBlob=null; imgB64=null;
-  imgFilteredBlob=null; // ← reset filtered image
+  warpedB64Original=null; // ← reset ภาพต้นฉบับที่เก็บไว้สำหรับ bake
   scanExtra=null;
   editId=null; // ข้อ 1: เคลียร์โหมดแก้ไขทุกครั้งที่รีเซ็ตฟอร์ม
   calcTHB();
@@ -835,7 +837,7 @@ function openEditForm(id){
   const r=allRec.find(x=>x.id===id); if(!r) return;
   closeDetail();
   editId=id;
-  imgBlob=null; imgB64=null; scanExtra=null; // ไม่แตะรูป/รายละเอียดย่อยเดิม เว้นแต่จะถ่าย/สแกนใหม่
+  imgBlob=null; imgB64=null; warpedB64Original=null; scanExtra=null; // ไม่แตะรูป/รายละเอียดย่อยเดิม เว้นแต่จะถ่าย/สแกนใหม่
   document.getElementById('formTitle').textContent='✏️ แก้ไขใบเสร็จ';
   document.getElementById('fVendor').value=r.vendor||'';
   document.getElementById('fDate').value=r.date||'';
@@ -846,6 +848,8 @@ function openEditForm(id){
   document.getElementById('fProj').value=r.project||'';
   document.getElementById('fNote').value=r.notes||'';
   calcTHB();
+  document.getElementById('adjustFiltersBox').style.display='none';
+  document.getElementById('prevImg').style.filter='none';
   if(r.image_url){
     document.getElementById('prevImg').src=r.image_url;
     document.getElementById('prevBox').style.display='block';
@@ -1084,11 +1088,14 @@ function confirmAdjust(){
   skipProcessing(workCanvas,quad); // ข้ามการแปลงสี/แสง ใช้รูปเดิม
 }
 
-// ฟังชันข้ามการแปลงสี/แสง — ใช้รูปเดิมเลย
-// ข้อ 4: Slider ปรับสี/แสง/ความคมชัด แบบ real-time
+// ==========================================
+// ข้อ 4: ปรับสี/แสง/ความคมชัด — คำนวณ pixel โดยตรง (ไม่พึ่ง ctx.filter ของ browser)
+// เพื่อรับประกันว่าภาพที่บันทึกตรงกับค่าที่ผู้ใช้ปรับ 100% ไม่ว่าเบราว์เซอร์ไหน
+// ==========================================
 let imgFilterState={contrast:120,brightness:100,saturate:100};
-let imgFilteredBlob=null; // เก็บ blob ที่มีการแปลงแล้ว
 
+// พรีวิวแบบเบา (เห็นผลทันที) — ใช้ CSS filter เพื่อความลื่นไหลตอนลาก slider เท่านั้น
+// ไม่ใช่ค่าที่ใช้บันทึกจริง (ค่าที่บันทึกจริงคำนวณใน bakeFilteredImage() ตอนกดยืนยัน)
 function updateImageFilter(){
   imgFilterState.contrast=parseInt(document.getElementById('contrastSlider').value);
   imgFilterState.brightness=parseInt(document.getElementById('brightnessSlider').value);
@@ -1097,11 +1104,9 @@ function updateImageFilter(){
   const prevImg=document.getElementById('prevImg');
   if(prevImg && prevImg.src){
     prevImg.style.filter=`contrast(${imgFilterState.contrast}%) brightness(${imgFilterState.brightness}%) saturate(${imgFilterState.saturate}%)`;
-    // ❌ ไม่เรียก applyFilterToCanvas ตรงนี้ — รอให้ user กดปุ่ม "✅ ยืนยันและสแกน" เท่านั้น
   }
 }
 
-// ฟังชันรีเซ็ต slider
 function resetImageFilter(){
   document.getElementById('contrastSlider').value=120;
   document.getElementById('brightnessSlider').value=100;
@@ -1113,50 +1118,77 @@ function resetImageFilter(){
   updateImageFilter();
 }
 
-// 🔥 ปุ่มยืนยันและสแกน — บันทึกภาพที่ปรับแล้ว แล้วส่ง AI วิเคราะห์
+// คำนวณ pixel ใหม่ทีละจุดตามสูตรเดียวกับ CSS filter (contrast → brightness → saturate)
+// ทำงานเหมือนกันทุก browser เพราะคำนวณเองทุกไบต์ ไม่พึ่ง canvas filter API ของเบราว์เซอร์
+function applyManualPixelFilter(imageData,contrastPct,brightnessPct,saturatePct){
+  const d=imageData.data;
+  const c=contrastPct/100, b=brightnessPct/100, s=saturatePct/100;
+  for(let i=0;i<d.length;i+=4){
+    let r=d[i], g=d[i+1], bl=d[i+2];
+    // 1) contrast: ดึง/ขยายค่าออกจากจุดกึ่งกลาง 128
+    r=(r-128)*c+128; g=(g-128)*c+128; bl=(bl-128)*c+128;
+    // 2) brightness: คูณตรงๆ
+    r*=b; g*=b; bl*=b;
+    // 3) saturate: ผสมกับค่าสีเทา (luminance) ตามสัดส่วน
+    const gray=0.299*r+0.587*g+0.114*bl;
+    r=gray+(r-gray)*s; g=gray+(g-gray)*s; bl=gray+(bl-gray)*s;
+    d[i]  =r<0?0:r>255?255:r;
+    d[i+1]=g<0?0:g>255?255:g;
+    d[i+2]=bl<0?0:bl>255?255:bl;
+  }
+  return imageData;
+}
+
+// สร้างภาพสุดท้าย (bake) จาก warpedB64Original ตามค่า slider ปัจจุบัน
+// คืนค่า {blob, base64} ผ่าน Promise — เป็นจุดเดียวที่สร้างภาพสุดท้ายของทั้งระบบ
+function bakeFilteredImage(){
+  return new Promise((resolve,reject)=>{
+    if(!warpedB64Original) return reject(new Error('ไม่พบภาพต้นฉบับ'));
+    const img=new Image();
+    img.onerror=()=>reject(new Error('โหลดภาพต้นฉบับล้มเหลว'));
+    img.onload=()=>{
+      try{
+        const canvas=document.createElement('canvas');
+        canvas.width=img.naturalWidth;
+        canvas.height=img.naturalHeight;
+        const ctx=canvas.getContext('2d');
+        ctx.drawImage(img,0,0); // วาดแบบไม่มี filter ก่อน (ดิบๆ)
+
+        // ดึง pixel data มาคำนวณเองตรงๆ — รับประกันผลลัพธ์ตรงกับค่า slider 100%
+        const imageData=ctx.getImageData(0,0,canvas.width,canvas.height);
+        applyManualPixelFilter(imageData,imgFilterState.contrast,imgFilterState.brightness,imgFilterState.saturate);
+        ctx.putImageData(imageData,0,0);
+
+        const finalB64=canvas.toDataURL('image/jpeg',.7);
+        canvas.toBlob(blob=>{
+          if(!blob) return reject(new Error('สร้างไฟล์ภาพล้มเหลว'));
+          resolve({blob,base64:finalB64});
+        },'image/jpeg',.7);
+      }catch(e){ reject(e); }
+    };
+    img.src=warpedB64Original;
+  });
+}
+
+// 🔥 ปุ่มยืนยันและสแกน — bake ภาพตามค่า slider ปัจจุบัน, เก็บเป็นภาพสุดท้ายเดียวที่จะถูกบันทึก, แล้วส่ง AI วิเคราะห์
 async function confirmFilterAndScan(){
   document.getElementById('adjustFiltersBox').style.display='none';
   document.getElementById('aiLoad').style.display='block';
-  setAiStatus('📸 กำลังบันทึกภาพที่ปรับแล้ว...');
-  
+  setAiStatus('📸 กำลังบันทึกภาพตามที่ปรับ...');
+  document.getElementById('btnSave').disabled=true;
+
   try{
-    // รอให้สร้าง canvas + blob เสร็จ
-    await new Promise((resolve, reject)=>{
-      const img=new Image();
-      img.onerror=()=>reject(new Error('โหลดรูปล้มเหลว'));
-      img.onload=()=>{
-        try{
-          const canvas=document.createElement('canvas');
-          canvas.width=img.naturalWidth;
-          canvas.height=img.naturalHeight;
-          const ctx=canvas.getContext('2d');
-          ctx.filter=`contrast(${imgFilterState.contrast}%) brightness(${imgFilterState.brightness}%) saturate(${imgFilterState.saturate}%)`;
-          ctx.drawImage(img,0,0);
-          
-          // เก็บเป็น base64 เพื่อส่ง AI
-          const filteredB64=canvas.toDataURL('image/jpeg',.68);
-          
-          // 🔥 รอให้ toBlob เสร็จ แล้วค่อยไป scanGemini
-          canvas.toBlob((blob)=>{
-            if(!blob) return reject(new Error('สร้าง blob ล้มเหลว'));
-            
-            imgBlob=blob; // อัปเดต imgBlob เป็นภาพที่มี filter ✅
-            imgB64=filteredB64; // อัปเดต imgB64 เป็นภาพที่มี filter
-            
-            // ตอนนี้ imgBlob มีค่าแน่นอน → ส่ง AI สแกน
-            setAiStatus('🤖 กำลังสแกน OCR ด้วย AI...');
-            document.getElementById('btnSave').disabled=false;
-            scanGemini(filteredB64);
-            
-            resolve();
-          },'image/jpeg',.68);
-        }catch(e){
-          reject(e);
-        }
-      };
-      img.src=imgB64; // ใช้ imgB64 เดิม (ยังไม่มี filter)
-    });
-    
+    const {blob,base64}=await bakeFilteredImage();
+    // ★ นี่คือจุดเดียวที่ imgBlob/imgB64 ถูกตั้งค่าเป็นภาพสุดท้าย — saveReceipt() จะใช้ค่านี้เท่านั้น
+    imgBlob=blob;
+    imgB64=base64;
+    document.getElementById('prevImg').style.filter='none'; // ภาพจริงถูกปรับแล้ว ไม่ต้องพึ่ง CSS filter อีก
+    document.getElementById('prevImg').src=base64;
+    document.getElementById('prevBox').style.display='block';
+
+    setAiStatus('🤖 กำลังสแกน OCR ด้วย AI...');
+    document.getElementById('btnSave').disabled=false;
+    scanGemini(base64); // ส่งภาพที่ปรับแล้ว (ตัวเดียวกับที่จะบันทึก) ให้ AI วิเคราะห์
   }catch(e){
     console.error('Confirm filter and scan failed:',e);
     document.getElementById('aiLoad').style.display='none';
@@ -1168,10 +1200,10 @@ async function confirmFilterAndScan(){
 
 function skipProcessing(workCanvas,quad){
   document.getElementById('formTitle').textContent='📷 ปรับแสง/สี ของรูป';
-  document.getElementById('aiLoad').style.display='none'; // ❌ ไม่แสดง loading
+  document.getElementById('aiLoad').style.display='none'; // ❌ ไม่แสดง loading ตอนนี้
   document.getElementById('prevBox').style.display='none';
   document.getElementById('adjustFiltersBox').style.display='none';
-  document.getElementById('btnSave').disabled=true;
+  document.getElementById('btnSave').disabled=true; // ล็อกปุ่มบันทึกไว้ก่อน จนกว่าจะกด "ยืนยันและสแกน"
   openSheet('sheetForm');
 
   setTimeout(()=>{
@@ -1179,24 +1211,20 @@ function skipProcessing(workCanvas,quad){
       const {w:outW,h:outH}=computeOutputSize(quad);
       const warped=warpPerspective(workCanvas,quad,outW,outH);
 
-      // ไม่มี filter — ใช้รูปตามที่เป็น
+      // ภาพต้นฉบับหลังยืดมุม (ยังไม่ปรับสี/แสง) — เก็บไว้เป็นฐานสำหรับ bake ตอนกดยืนยัน
       const finalCanvas=document.createElement('canvas');
       finalCanvas.width=outW; finalCanvas.height=outH;
       finalCanvas.getContext('2d').drawImage(warped,0,0);
 
-      const b64full=finalCanvas.toDataURL('image/jpeg',.68);
-      imgB64=b64full;
+      const b64full=finalCanvas.toDataURL('image/jpeg',.92); // เก็บคุณภาพสูงไว้ก่อน บีบอัดจริงตอน bake
+      warpedB64Original=b64full; // ★ ต้นฉบับ ไม่ถูกแก้ไขอีกหลังจากนี้
+      imgB64=null;   // ยังไม่ใช่ภาพสุดท้าย จนกว่าจะกดยืนยัน
+      imgBlob=null;  // ป้องกันการบันทึกภาพ original โดยไม่ตั้งใจ
+
       document.getElementById('prevImg').src=b64full;
       document.getElementById('prevBox').style.display='block';
       document.getElementById('adjustFiltersBox').style.display='block'; // ← แสดง slider
-      resetImageFilter(); // รีเซต slider
-      updateImageFilter(); // ใช้ค่า slider ที่ผู้ใช้ตั้ง
-
-      finalCanvas.toBlob(blob=>{
-        imgBlob=blob;
-        document.getElementById('btnSave').disabled=false;
-        // ❌ ลบการเรียก scanGemini ออก — รอให้ user กดปุ่ม "✅ ยืนยันและสแกน" แทน
-      },'image/jpeg',.68);
+      resetImageFilter(); // รีเซต slider + อัปเดตพรีวิวด้วย CSS filter (แค่ตา ไม่ใช่ข้อมูลจริง)
     }catch(e){
       console.error('Skip processing failed:',e);
       document.getElementById('aiLoad').style.display='none';
@@ -1283,52 +1311,6 @@ function warpPerspective(srcCanvas,quad,outW,outH){
   oCtx.putImageData(oImg,0,0);
   return outCanvas;
 }
-
-// ข้อ 4: ปรับเบาๆ ให้ข้อมูลอ่านง่ายขึ้น โดยไม่ลบตัวอักษรหรือบิดเบี้ยวข้อมูล
-// ใช้ filter ที่温和เพียง: เพิ่ม contrast เล็กน้อย + brightness + saturate น้อยๆ เท่านั้น
-// ไม่ใช้อัลกอริทึมพลิกแพลงแบบเดิม เพื่อให้ข้อมูลยังอ่านได้ชัดเจน
-
-function processScannedImage(workCanvas,quad){
-  document.getElementById('formTitle').textContent='📷 ปรับแสง/สี ของรูป';
-  document.getElementById('aiLoad').style.display='none'; // ❌ ไม่แสดง loading
-  document.getElementById('prevBox').style.display='none';
-  document.getElementById('adjustFiltersBox').style.display='none';
-  document.getElementById('btnSave').disabled=true;
-  openSheet('sheetForm');
-
-  // หน่วงเฟรมเดียวให้ UI วาด loading ก่อนเริ่มงานหนัก (warp loop)
-  setTimeout(()=>{
-    try{
-      const {w:outW,h:outH}=computeOutputSize(quad);
-      const warped=warpPerspective(workCanvas,quad,outW,outH);
-
-      // ไม่ปรับแสงอัตโนมัติ — ให้ผู้ใช้ปรับเอง via slider
-      const finalCanvas=document.createElement('canvas');
-      finalCanvas.width=outW; finalCanvas.height=outH;
-      finalCanvas.getContext('2d').drawImage(warped,0,0);
-
-      // *** 2.2 บีบอัดเป็น JPEG เล็กที่สุดเท่าที่ยังอ่านง่าย ***
-      const b64full=finalCanvas.toDataURL('image/jpeg',.68);
-      imgB64=b64full;
-      document.getElementById('prevImg').src=b64full;
-      document.getElementById('prevBox').style.display='block';
-      document.getElementById('adjustFiltersBox').style.display='block'; // ← แสดง slider ให้ปรับ
-      resetImageFilter(); // รีเซต slider เป็นค่าเดิม
-      updateImageFilter(); // ใช้ค่า slider
-
-      finalCanvas.toBlob(blob=>{
-        imgBlob=blob;
-        // ❌ ลบการเรียก scanGemini ออก — รอให้ user กดปุ่ม "✅ ยืนยันและสแกน" แทน
-      },'image/jpeg',.68);
-    }catch(e){
-      console.error('Process scanned image failed:',e);
-      document.getElementById('aiLoad').style.display='none';
-      document.getElementById('btnSave').disabled=false;
-      toast('ประมวลผลภาพผิดพลาด ลองใหม่อีกครั้ง',true);
-    }
-  },50);
-}
-
 
 // ==========================================
 // GEMINI AI — gemini-3.5-flash หลัก + gemini-3.1-flash-lite สำรอง
@@ -1525,6 +1507,10 @@ function calcTHB(){
 // ==========================================
 async function saveReceipt(){
   if(!sb) return toast('กรุณาตั้งค่า Supabase ก่อน',true);
+  // 🛡️ กันบันทึกภาพ original: ถ้ามีภาพต้นฉบับรอ bake อยู่ (warpedB64Original) แต่ยังไม่กด "ยืนยันและสแกน" (imgBlob ว่าง) → บล็อกไว้ก่อน
+  if(warpedB64Original && !imgBlob){
+    return toast('กรุณากด "✅ ยืนยันและสแกน" เพื่อยืนยันภาพก่อนบันทึก',true);
+  }
   const vendor=document.getElementById('fVendor').value.trim();
   const amt=parseFloat(document.getElementById('fAmt').value)||0;
   if(!vendor) return toast('กรุณากรอกชื่อร้านค้า',true);
