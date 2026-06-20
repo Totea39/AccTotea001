@@ -1161,7 +1161,7 @@ function processScannedImage(workCanvas,quad){
       const finalCanvas=document.createElement('canvas');
       finalCanvas.width=outW; finalCanvas.height=outH;
       const fctx=finalCanvas.getContext('2d');
-      fctx.filter='contrast(125%) brightness(103%) saturate(110%)';
+      fctx.filter='contrast(135%) brightness(130%) saturate(120%)';
       fctx.drawImage(warped,0,0);
 
       // *** 2.2 บีบอัดเป็น JPEG เล็กที่สุดเท่าที่ยังอ่านง่าย ***
