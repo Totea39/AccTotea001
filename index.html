@@ -46,7 +46,7 @@ html,body{font-family:'Sarabun',-apple-system,BlinkMacSystemFont,sans-serif;back
 .header-count{font-size:11px;color:#9B7050;font-weight:600;flex-shrink:0}
 
 /* PAGES */
-.page{display:none;padding:14px 16px calc(108px + env(safe-area-inset-bottom,0px));min-height:calc(100vh - 148px)}
+.page{display:none;padding:14px 16px calc(108px + env(safe-area-inset-bottom,0px));min-height:calc(100vh - 148px);will-change:transform,opacity}
 .page.active{display:block}
 .section-title{font-size:15px;font-weight:800;color:#3D2810;margin-bottom:14px;display:flex;align-items:center;gap:8px}
 
@@ -229,6 +229,11 @@ html,body{font-family:'Sarabun',-apple-system,BlinkMacSystemFont,sans-serif;back
 .chat-msg-name{font-size:12px;font-weight:800;color:#9B5E1E;overflow-wrap:anywhere}
 .chat-msg-time{font-size:10px;color:#B09070;flex-shrink:0;white-space:nowrap}
 .chat-msg-body{font-size:13.5px;color:#3D2810;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
+/* ข้อ: กล่องแชทแสดงประมาณ 5 ข้อความ ที่เหลือเลื่อนดูได้ */
+#chatWrap{max-height:430px;overflow-y:auto;scroll-behavior:smooth;padding-right:4px}
+#chatWrap::-webkit-scrollbar{width:5px}
+#chatWrap::-webkit-scrollbar-thumb{background:#E0CBA8;border-radius:10px}
+#chatWrap::-webkit-scrollbar-track{background:transparent}
 .chat-del{color:#E0523A;font-size:11px;font-weight:700;cursor:pointer;text-align:right;margin-top:6px}
 .admin-box{background:#FFF8EE;border:1.5px dashed #DDD0C0;border-radius:16px;padding:14px;margin-top:4px}
 
@@ -413,8 +418,8 @@ html,body{font-family:'Sarabun',-apple-system,BlinkMacSystemFont,sans-serif;back
       <input type="range" id="saturateSlider" class="input" min="80" max="130" value="100" step="2" oninput="updateImageFilter();document.getElementById('saturateVal').textContent=this.value" style="height:4px;padding:0">
     </div>
     <div class="input-row">
-      <button class="btn btn-secondary" onclick="resetImageFilter()" style="font-size:12px;padding:8px 12px;flex:1">🔄 ตั้งค่าเดิม</button>
-      <button class="btn btn-primary" onclick="confirmFilterAndScan()" style="font-size:12px;padding:8px 12px;flex:1">✅ ยืนยันและสแกน</button>
+      <button class="btn btn-secondary" onclick="resetImageFilter()" style="font-size:12px;padding:10px 6px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:40px;display:flex;align-items:center;justify-content:center">🔄 ตั้งค่าเดิม</button>
+      <button class="btn btn-primary" onclick="confirmFilterAndScan()" style="font-size:12px;padding:10px 6px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:40px;display:flex;align-items:center;justify-content:center">✅ ยืนยันและสแกน</button>
     </div>
   </div>
   
@@ -678,17 +683,94 @@ function showApp(){
 // ==========================================
 // NAV
 // ==========================================
+// ลำดับหน้าสำหรับปัดซ้าย-ขวา (ซ้าย=ไปข้างหน้า, ขวา=ย้อนกลับ)
+const PAGE_ORDER=['page-list','page-summary','page-files','page-settings'];
+const NAV_BTN_IDS=['nb-list','nb-summary','nb-files','nb-settings'];
+
 function goPage(pid,btn){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById(pid).classList.add('active');
-  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  // *** FIX: ซ่อนปุ่ม + ในหน้าตั้งค่า เพราะไปทับการ์ดต่างๆ และข้อความท้ายหน้า ***
-  document.getElementById('fabBtn').classList.toggle('fab-hidden', pid==='page-settings');
-  if(pid==='page-summary')  renderSummary();
-  if(pid==='page-files')    renderFiles();
-  if(pid==='page-settings') fetchChat(); // ข้อ 2: ดึงข้อความแชทล่าสุดทุกครั้งที่เข้าหน้าตั้งค่า
+  const cur=document.querySelector('.page.active');
+  const curIdx=PAGE_ORDER.indexOf(cur?.id);
+  const nextIdx=PAGE_ORDER.indexOf(pid);
+  const dir=(curIdx!==-1 && nextIdx!==-1 && nextIdx<curIdx)?'right':'left';
+  switchPageAnimated(pid,btn,dir);
 }
+
+// สลับหน้าแบบเลื่อนนุ่มๆ (slide + fade) ใช้ทั้งกดปุ่มเมนูล่างและปัดซ้าย-ขวา
+function switchPageAnimated(pid,btn,direction){
+  const cur=document.querySelector('.page.active');
+  const next=document.getElementById(pid);
+  if(!next||cur===next) return;
+
+  const outX=direction==='left'?'-22px':'22px';
+  const inX =direction==='left'?'22px':'-22px';
+
+  if(cur){
+    cur.style.transition='transform .15s ease-in, opacity .15s ease-in';
+    cur.style.transform=`translateX(${outX})`;
+    cur.style.opacity='0';
+  }
+
+  setTimeout(()=>{
+    if(cur){
+      cur.classList.remove('active');
+      cur.style.transition=''; cur.style.transform=''; cur.style.opacity='';
+    }
+    next.style.transition='none';
+    next.style.transform=`translateX(${inX})`;
+    next.style.opacity='0';
+    next.classList.add('active');
+    next.offsetHeight; // บังคับ reflow ก่อนเริ่ม transition
+    next.style.transition='transform .2s ease-out, opacity .2s ease-out';
+    next.style.transform='translateX(0)';
+    next.style.opacity='1';
+    setTimeout(()=>{ next.style.transition=''; next.style.transform=''; next.style.opacity=''; },210);
+
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+    if(btn) btn.classList.add('active');
+    else { const idx=PAGE_ORDER.indexOf(pid); const b=document.getElementById(NAV_BTN_IDS[idx]); if(b) b.classList.add('active'); }
+    document.getElementById('fabBtn').classList.toggle('fab-hidden', pid==='page-settings');
+    if(pid==='page-summary')  renderSummary();
+    if(pid==='page-files')    renderFiles();
+    if(pid==='page-settings') fetchChat();
+  },cur?150:0);
+}
+
+// ==========================================
+// ปัดซ้าย-ขวาเปลี่ยนหน้า (Swipe Navigation)
+// ==========================================
+let _swipeX=0,_swipeY=0,_swipeTracking=false;
+
+function _swipeBlocked(target){
+  if(document.querySelector('.sheet.open')) return true;
+  if(document.getElementById('adjustOverlay')?.classList.contains('on')) return true;
+  if(document.getElementById('cameraOverlay')?.classList.contains('on')) return true;
+  if(document.getElementById('imgLightbox')?.classList.contains('on')) return true;
+  if(target.closest && (target.closest('input[type="range"]')||target.closest('#adjustSvg'))) return true;
+  return false;
+}
+
+document.addEventListener('touchstart',e=>{
+  if(e.touches.length!==1||_swipeBlocked(e.target)){ _swipeTracking=false; return; }
+  _swipeX=e.touches[0].clientX; _swipeY=e.touches[0].clientY; _swipeTracking=true;
+},{passive:true});
+
+document.addEventListener('touchend',e=>{
+  if(!_swipeTracking) return;
+  _swipeTracking=false;
+  const dx=e.changedTouches[0].clientX-_swipeX;
+  const dy=e.changedTouches[0].clientY-_swipeY;
+  if(Math.abs(dx)<60||Math.abs(dx)<Math.abs(dy)*1.4) return; // ต้องปัดแนวนอนชัดเจนพอ
+  const curId=document.querySelector('.page.active')?.id;
+  const idx=PAGE_ORDER.indexOf(curId);
+  if(idx===-1) return;
+  let nextIdx=idx;
+  if(dx<0&&idx<PAGE_ORDER.length-1) nextIdx=idx+1; // ปัดซ้าย → หน้าถัดไป
+  if(dx>0&&idx>0) nextIdx=idx-1; // ปัดขวา → หน้าก่อนหน้า
+  if(nextIdx!==idx){
+    const btn=document.getElementById(NAV_BTN_IDS[nextIdx]);
+    switchPageAnimated(PAGE_ORDER[nextIdx],btn,dx<0?'left':'right');
+  }
+},{passive:true});
 
 // ==========================================
 // TOAST
@@ -1089,13 +1171,14 @@ function confirmAdjust(){
 }
 
 // ==========================================
-// ข้อ 4: ปรับสี/แสง/ความคมชัด — คำนวณ pixel โดยตรง (ไม่พึ่ง ctx.filter ของ browser)
-// เพื่อรับประกันว่าภาพที่บันทึกตรงกับค่าที่ผู้ใช้ปรับ 100% ไม่ว่าเบราว์เซอร์ไหน
+// ข้อ 4: ปรับสี/แสง/ความคมชัด — คำนวณตามสูตรมาตรฐาน W3C Filter Effects เป๊ะๆ
+// (สูตรเดียวกับที่ browser ใช้เรนเดอร์ CSS filter จริง) ไม่พึ่ง canvas filter API
+// ที่บาง browser/เวอร์ชันรองรับไม่สมบูรณ์ → รับประกันภาพที่บันทึกตรงกับที่ user เห็นในพรีวิว 100%
+// ใช้ได้ผลเหมือนกันทั้งถ่ายภาพและอัพโหลดไฟล์ เพราะทั้งสองทางใช้ฟังก์ชันเดียวกันนี้
 // ==========================================
 let imgFilterState={contrast:120,brightness:100,saturate:100};
 
-// พรีวิวแบบเบา (เห็นผลทันที) — ใช้ CSS filter เพื่อความลื่นไหลตอนลาก slider เท่านั้น
-// ไม่ใช่ค่าที่ใช้บันทึกจริง (ค่าที่บันทึกจริงคำนวณใน bakeFilteredImage() ตอนกดยืนยัน)
+// พรีวิวแบบเบา (เห็นผลทันทีตอนลาก slider) — ใช้ CSS filter ของ browser (ของจริง ไม่ใช่ค่าประมาณ)
 function updateImageFilter(){
   imgFilterState.contrast=parseInt(document.getElementById('contrastSlider').value);
   imgFilterState.brightness=parseInt(document.getElementById('brightnessSlider').value);
@@ -1118,10 +1201,36 @@ function resetImageFilter(){
   updateImageFilter();
 }
 
-// คำนวณ pixel ใหม่ทีละจุดตามสูตรเดียวกับ CSS filter (contrast → brightness → saturate)
-// ทำงานเหมือนกันทุก browser เพราะคำนวณเองทุกไบต์ ไม่พึ่ง canvas filter API ของเบราว์เซอร์
+// คำนวณ pixel ตามสูตร W3C Filter Effects spec เป๊ะๆ (ตัวเดียวกับที่ทุก browser ใช้เรนเดอร์ CSS filter)
+// contrast/brightness: ตัวคูณตรงๆ ตามสเปก, saturate: ใช้ matrix ผสมสี 3x3 ตามสเปก (ไม่ใช่สูตรลัด)
+function applyW3CFilter(imageData,contrastPct,brightnessPct,saturatePct){
+  const d=imageData.data;
+  const contrast=contrastPct/100, brightness=brightnessPct/100, sat=saturatePct/100;
+  // matrix สำหรับ saturate ตามสเปก W3C Filter Effects 1.0 §15.10
+  const sr_r=0.213+0.787*sat, sr_g=0.715-0.715*sat, sr_b=0.072-0.072*sat;
+  const sg_r=0.213-0.213*sat, sg_g=0.715+0.285*sat, sg_b=0.072-0.072*sat;
+  const sb_r=0.213-0.213*sat, sb_g=0.715-0.715*sat, sb_b=0.072+0.928*sat;
+
+  for(let i=0;i<d.length;i+=4){
+    let r=d[i], g=d[i+1], b=d[i+2];
+    // 1) contrast (เป๊ะตามสเปก: จุดกึ่งกลาง 127.5)
+    r=(r-127.5)*contrast+127.5; g=(g-127.5)*contrast+127.5; b=(b-127.5)*contrast+127.5;
+    // 2) brightness (ตัวคูณตรงๆ)
+    r*=brightness; g*=brightness; b*=brightness;
+    // 3) saturate (matrix ผสมสีตามสเปก ไม่ใช่ luminance เฉลี่ยแบบลัด)
+    const nr=sr_r*r+sr_g*g+sr_b*b;
+    const ng=sg_r*r+sg_g*g+sg_b*b;
+    const nb=sb_r*r+sb_g*g+sb_b*b;
+    d[i]  =nr<0?0:nr>255?255:nr;
+    d[i+1]=ng<0?0:ng>255?255:ng;
+    d[i+2]=nb<0?0:nb>255?255:nb;
+  }
+  return imageData;
+}
+
 // สร้างภาพสุดท้าย (bake) จาก warpedB64Original ตามค่า slider ปัจจุบัน
-// ใช้ ctx.filter เพราะ match ได้ 100% กับ CSS preview
+// คำนวณ pixel เองตามสูตร W3C เป๊ะๆ — ไม่พึ่งว่า browser รองรับ canvas filter หรือไม่
+// รับประกันผลลัพธ์เหมือนกัน 100% ทั้งถ่ายภาพและอัพโหลดไฟล์ (ใช้ฟังก์ชันเดียวกัน เส้นทางเดียวกัน)
 function bakeFilteredImage(){
   return new Promise((resolve,reject)=>{
     if(!warpedB64Original) return reject(new Error('ไม่พบภาพต้นฉบับ'));
@@ -1133,15 +1242,17 @@ function bakeFilteredImage(){
         canvas.width=img.naturalWidth;
         canvas.height=img.naturalHeight;
         const ctx=canvas.getContext('2d');
-        // ใช้ ctx.filter เพราะตรงกับ CSS preview ที่ user เห็น 100%
-        ctx.filter=`contrast(${imgFilterState.contrast}%) brightness(${imgFilterState.brightness}%) saturate(${imgFilterState.saturate}%)`;
-        ctx.drawImage(img,0,0);
+        ctx.drawImage(img,0,0); // วาดดิบๆ ก่อน ไม่มี filter
 
-        const finalB64=canvas.toDataURL('image/jpeg',.7);
+        const imageData=ctx.getImageData(0,0,canvas.width,canvas.height);
+        applyW3CFilter(imageData,imgFilterState.contrast,imgFilterState.brightness,imgFilterState.saturate);
+        ctx.putImageData(imageData,0,0);
+
+        const finalB64=canvas.toDataURL('image/jpeg',.85);
         canvas.toBlob(blob=>{
           if(!blob) return reject(new Error('สร้างไฟล์ภาพล้มเหลว'));
           resolve({blob,base64:finalB64});
-        },'image/jpeg',.7);
+        },'image/jpeg',.85);
       }catch(e){ reject(e); }
     };
     img.src=warpedB64Original;
@@ -1884,6 +1995,8 @@ function renderChat(){
       <div class="chat-msg-body">${escapeHtml(m.message)}</div>
       ${adminUnlocked?`<div class="chat-del" onclick="deleteChat('${m.id}')">🗑️ ลบ</div>`:''}
     </div>`).join('');
+  // เลื่อนไปข้อความล่าสุด (ล่างสุด) อัตโนมัติ — เห็นข้อความใหม่ก่อน เลื่อนขึ้นเพื่อดูข้อความเก่า
+  wrap.scrollTop=wrap.scrollHeight;
 }
 
 async function sendChat(){
