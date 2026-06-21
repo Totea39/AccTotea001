@@ -406,12 +406,16 @@ html,body{font-family:'Sarabun',-apple-system,BlinkMacSystemFont,sans-serif;back
   <div id="adjustFiltersBox" style="display:none;background:#f5f1ed;padding:14px;border-radius:10px;margin-bottom:14px">
     <div style="font-size:12px;color:#9B7050;margin-bottom:10px;font-weight:600">✨ ปรับแสง / สี / ความคมชัด</div>
     <div class="form-group">
-      <label class="form-label" style="font-size:12px">📐 ความคมชัด: <span id="contrastVal">120</span>%</label>
-      <input type="range" id="contrastSlider" class="input" min="80" max="160" value="120" step="5" oninput="updateImageFilter();document.getElementById('contrastVal').textContent=this.value" style="height:4px;padding:0">
-    </div>
-    <div class="form-group">
       <label class="form-label" style="font-size:12px">☀️ ความสว่าง: <span id="brightnessVal">100</span>%</label>
       <input type="range" id="brightnessSlider" class="input" min="80" max="130" value="100" step="2" oninput="updateImageFilter();document.getElementById('brightnessVal').textContent=this.value" style="height:4px;padding:0">
+    </div>
+    <div class="form-group">
+      <label class="form-label" style="font-size:12px">🌑 เงา: <span id="shadowVal">100</span>%</label>
+      <input type="range" id="shadowSlider" class="input" min="60" max="160" value="100" step="5" oninput="updateImageFilter();document.getElementById('shadowVal').textContent=this.value" style="height:4px;padding:0">
+    </div>
+    <div class="form-group">
+      <label class="form-label" style="font-size:12px">📐 ความคมชัด: <span id="contrastVal">120</span>%</label>
+      <input type="range" id="contrastSlider" class="input" min="80" max="160" value="120" step="5" oninput="updateImageFilter();document.getElementById('contrastVal').textContent=this.value" style="height:4px;padding:0">
     </div>
     <div class="form-group">
       <label class="form-label" style="font-size:12px">🎨 ความอิ่มสี: <span id="saturateVal">100</span>%</label>
@@ -1213,7 +1217,7 @@ function confirmAdjust(){
 // เพื่อไม่ให้ลาก slider แล้วหน่วง: คำนวณบน "ภาพย่อขนาดเล็ก" (ไม่ใช่ภาพเต็มความละเอียด)
 // และ throttle ด้วย requestAnimationFrame (คำนวณแค่เฟรมล่าสุด ไม่สะสมคิวค้าง)
 // ==========================================
-let imgFilterState={contrast:120,brightness:100,saturate:100};
+let imgFilterState={contrast:120,brightness:100,saturate:100,shadow:100};
 let _previewBaseCanvas=null; // ภาพต้นฉบับย่อเล็ก (ไม่มี filter) เตรียมไว้ล่วงหน้า สำหรับคำนวณพรีวิวเร็วๆ
 let _previewRAF=null;        // ตัวจับ requestAnimationFrame ที่รออยู่ (ถ้ามี)
 
@@ -1246,7 +1250,7 @@ function renderLivePreview(){
   const octx=out.getContext('2d');
   octx.drawImage(_previewBaseCanvas,0,0);
   const imageData=octx.getImageData(0,0,w,h);
-  applyW3CFilter(imageData,imgFilterState.contrast,imgFilterState.brightness,imgFilterState.saturate);
+  applyW3CFilter(imageData,imgFilterState.contrast,imgFilterState.brightness,imgFilterState.saturate,imgFilterState.shadow);
   octx.putImageData(imageData,0,0);
   const prevImg=document.getElementById('prevImg');
   prevImg.style.filter='none'; // ไม่พึ่ง CSS filter อีกแล้ว สีมาจากการคำนวณ pixel ตรงๆ
@@ -1259,6 +1263,7 @@ function updateImageFilter(){
   imgFilterState.contrast=parseInt(document.getElementById('contrastSlider').value);
   imgFilterState.brightness=parseInt(document.getElementById('brightnessSlider').value);
   imgFilterState.saturate=parseInt(document.getElementById('saturateSlider').value);
+  imgFilterState.shadow=parseInt(document.getElementById('shadowSlider').value);
 
   if(_previewRAF) cancelAnimationFrame(_previewRAF);
   _previewRAF=requestAnimationFrame(()=>{ renderLivePreview(); _previewRAF=null; });
@@ -1268,18 +1273,23 @@ function resetImageFilter(){
   document.getElementById('contrastSlider').value=120;
   document.getElementById('brightnessSlider').value=100;
   document.getElementById('saturateSlider').value=100;
+  document.getElementById('shadowSlider').value=100;
   document.getElementById('contrastVal').textContent='120';
   document.getElementById('brightnessVal').textContent='100';
   document.getElementById('saturateVal').textContent='100';
-  imgFilterState={contrast:120,brightness:100,saturate:100};
+  document.getElementById('shadowVal').textContent='100';
+  imgFilterState={contrast:120,brightness:100,saturate:100,shadow:100};
   updateImageFilter();
 }
 
 // คำนวณ pixel ตามสูตร W3C Filter Effects spec เป๊ะๆ (ใช้ทั้งพรีวิวและภาพสุดท้าย — สูตรเดียวกัน 100%)
 // contrast/brightness: ตัวคูณตรงๆ ตามสเปก, saturate: ใช้ matrix ผสมสี 3x3 ตามสเปก (ไม่ใช่สูตรลัด)
-function applyW3CFilter(imageData,contrastPct,brightnessPct,saturatePct){
+// shadow: ยก/กดเฉพาะโซนมืด (custom, ไม่ใช่ CSS filter มาตรฐาน) — น้ำหนักผลจะลดลงเรื่อยๆ ตามความสว่างของ pixel
+// ทำให้โซนสว่าง (ไฮไลต์/พื้นกระดาษ) แทบไม่ถูกแตะ กระทบเฉพาะตัวอักษร/รายละเอียดในเงามืดเท่านั้น
+function applyW3CFilter(imageData,contrastPct,brightnessPct,saturatePct,shadowPct){
   const d=imageData.data;
   const contrast=contrastPct/100, brightness=brightnessPct/100, sat=saturatePct/100;
+  const shadowAmt=((shadowPct??100)-100)/100; // -0.4 (กดเงาให้มืดลง) ถึง +0.6 (ยกเงาให้สว่างขึ้น)
   // matrix สำหรับ saturate ตามสเปก W3C Filter Effects 1.0 §15.10
   const sr_r=0.213+0.787*sat, sr_g=0.715-0.715*sat, sr_b=0.072-0.072*sat;
   const sg_r=0.213-0.213*sat, sg_g=0.715+0.285*sat, sg_b=0.072-0.072*sat;
@@ -1287,6 +1297,13 @@ function applyW3CFilter(imageData,contrastPct,brightnessPct,saturatePct){
 
   for(let i=0;i<d.length;i+=4){
     let r=d[i], g=d[i+1], b=d[i+2];
+    // 0) shadow: ยก/กดเฉพาะโซนมืด — คำนวณน้ำหนักจาก luminance ก่อนปรับอย่างอื่น
+    if(shadowAmt!==0){
+      const lum=0.299*r+0.587*g+0.114*b;
+      const w=Math.pow(Math.max(0,1-lum/180),1.7); // ยิ่งมืด ยิ่งมีผลมาก, สว่างเกิน ~180 แทบไม่กระทบ
+      const lift=shadowAmt*w*140;
+      r+=lift; g+=lift; b+=lift;
+    }
     // 1) contrast (เป๊ะตามสเปก: จุดกึ่งกลาง 127.5)
     r=(r-127.5)*contrast+127.5; g=(g-127.5)*contrast+127.5; b=(b-127.5)*contrast+127.5;
     // 2) brightness (ตัวคูณตรงๆ)
@@ -1319,7 +1336,7 @@ function bakeFilteredImage(){
         ctx.drawImage(img,0,0); // วาดดิบๆ ก่อน ไม่มี filter
 
         const imageData=ctx.getImageData(0,0,canvas.width,canvas.height);
-        applyW3CFilter(imageData,imgFilterState.contrast,imgFilterState.brightness,imgFilterState.saturate);
+        applyW3CFilter(imageData,imgFilterState.contrast,imgFilterState.brightness,imgFilterState.saturate,imgFilterState.shadow);
         ctx.putImageData(imageData,0,0);
 
         const finalB64=canvas.toDataURL('image/jpeg',.85);
