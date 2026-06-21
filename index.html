@@ -835,6 +835,8 @@ function resetForm(){
   document.getElementById('fileGal').value='';
   imgBlob=null; imgB64=null;
   warpedB64Original=null; // ← reset ภาพต้นฉบับที่เก็บไว้สำหรับ bake
+  if(_previewRAF){ cancelAnimationFrame(_previewRAF); _previewRAF=null; }
+  _previewBaseCanvas=null; // ← reset canvas เล็กที่เตรียมไว้สำหรับพรีวิว
   scanExtra=null;
   editId=null; // ข้อ 1: เคลียร์โหมดแก้ไขทุกครั้งที่รีเซ็ตฟอร์ม
   calcTHB();
@@ -920,6 +922,8 @@ function openEditForm(id){
   closeDetail();
   editId=id;
   imgBlob=null; imgB64=null; warpedB64Original=null; scanExtra=null; // ไม่แตะรูป/รายละเอียดย่อยเดิม เว้นแต่จะถ่าย/สแกนใหม่
+  if(_previewRAF){ cancelAnimationFrame(_previewRAF); _previewRAF=null; }
+  _previewBaseCanvas=null;
   document.getElementById('formTitle').textContent='✏️ แก้ไขใบเสร็จ';
   document.getElementById('fVendor').value=r.vendor||'';
   document.getElementById('fDate').value=r.date||'';
@@ -1175,19 +1179,61 @@ function confirmAdjust(){
 // (สูตรเดียวกับที่ browser ใช้เรนเดอร์ CSS filter จริง) ไม่พึ่ง canvas filter API
 // ที่บาง browser/เวอร์ชันรองรับไม่สมบูรณ์ → รับประกันภาพที่บันทึกตรงกับที่ user เห็นในพรีวิว 100%
 // ใช้ได้ผลเหมือนกันทั้งถ่ายภาพและอัพโหลดไฟล์ เพราะทั้งสองทางใช้ฟังก์ชันเดียวกันนี้
+//
+// 🆕 พรีวิวตอนนี้ "คำนวณ pixel เองด้วยสูตรเดียวกับตอนบันทึกจริง" แทนการพึ่ง CSS filter ของ browser
+// (เพราะ CSS filter ของแต่ละ browser อาจ render ไม่ตรงกับผลคำนวณ pixel ของเรา 100%)
+// เพื่อไม่ให้ลาก slider แล้วหน่วง: คำนวณบน "ภาพย่อขนาดเล็ก" (ไม่ใช่ภาพเต็มความละเอียด)
+// และ throttle ด้วย requestAnimationFrame (คำนวณแค่เฟรมล่าสุด ไม่สะสมคิวค้าง)
 // ==========================================
 let imgFilterState={contrast:120,brightness:100,saturate:100};
+let _previewBaseCanvas=null; // ภาพต้นฉบับย่อเล็ก (ไม่มี filter) เตรียมไว้ล่วงหน้า สำหรับคำนวณพรีวิวเร็วๆ
+let _previewRAF=null;        // ตัวจับ requestAnimationFrame ที่รออยู่ (ถ้ามี)
 
-// พรีวิวแบบเบา (เห็นผลทันทีตอนลาก slider) — ใช้ CSS filter ของ browser (ของจริง ไม่ใช่ค่าประมาณ)
+// เตรียม canvas เล็กไว้ล่วงหน้า (เรียกครั้งเดียวตอนได้ภาพต้นฉบับใหม่) — เพื่อให้พรีวิวคำนวณเร็ว
+function preparePreviewCanvas(b64){
+  return new Promise(resolve=>{
+    const img=new Image();
+    img.onerror=()=>resolve(); // โหลดไม่ได้ก็ปล่อยผ่าน ไม่บล็อกการทำงาน
+    img.onload=()=>{
+      const maxDim=480; // เล็กพอให้คำนวณไว แต่ยังคมพอให้เห็นรายละเอียดตอนปรับ
+      const scale=Math.min(1,maxDim/Math.max(img.naturalWidth,img.naturalHeight));
+      const w=Math.max(1,Math.round(img.naturalWidth*scale));
+      const h=Math.max(1,Math.round(img.naturalHeight*scale));
+      const c=document.createElement('canvas');
+      c.width=w; c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      _previewBaseCanvas=c;
+      resolve();
+    };
+    img.src=b64;
+  });
+}
+
+// คำนวณ + วาดพรีวิวจาก canvas เล็ก ด้วยสูตรเดียวกับตอนบันทึกจริง (applyW3CFilter) — ไม่ใช่ CSS filter
+function renderLivePreview(){
+  if(!_previewBaseCanvas) return;
+  const w=_previewBaseCanvas.width, h=_previewBaseCanvas.height;
+  const out=document.createElement('canvas');
+  out.width=w; out.height=h;
+  const octx=out.getContext('2d');
+  octx.drawImage(_previewBaseCanvas,0,0);
+  const imageData=octx.getImageData(0,0,w,h);
+  applyW3CFilter(imageData,imgFilterState.contrast,imgFilterState.brightness,imgFilterState.saturate);
+  octx.putImageData(imageData,0,0);
+  const prevImg=document.getElementById('prevImg');
+  prevImg.style.filter='none'; // ไม่พึ่ง CSS filter อีกแล้ว สีมาจากการคำนวณ pixel ตรงๆ
+  prevImg.src=out.toDataURL('image/jpeg',.82);
+}
+
+// พรีวิวแบบเบา (เห็นผลทันทีตอนลาก slider) — throttle ด้วย requestAnimationFrame กันลากเร็วๆ แล้วหน่วง
+// (ถ้า event ยิงรัวๆ จะคำนวณแค่ค่าล่าสุดต่อเฟรม ไม่สะสมคิวงานค้าง)
 function updateImageFilter(){
   imgFilterState.contrast=parseInt(document.getElementById('contrastSlider').value);
   imgFilterState.brightness=parseInt(document.getElementById('brightnessSlider').value);
   imgFilterState.saturate=parseInt(document.getElementById('saturateSlider').value);
-  
-  const prevImg=document.getElementById('prevImg');
-  if(prevImg && prevImg.src){
-    prevImg.style.filter=`contrast(${imgFilterState.contrast}%) brightness(${imgFilterState.brightness}%) saturate(${imgFilterState.saturate}%)`;
-  }
+
+  if(_previewRAF) cancelAnimationFrame(_previewRAF);
+  _previewRAF=requestAnimationFrame(()=>{ renderLivePreview(); _previewRAF=null; });
 }
 
 function resetImageFilter(){
@@ -1201,7 +1247,7 @@ function resetImageFilter(){
   updateImageFilter();
 }
 
-// คำนวณ pixel ตามสูตร W3C Filter Effects spec เป๊ะๆ (ตัวเดียวกับที่ทุก browser ใช้เรนเดอร์ CSS filter)
+// คำนวณ pixel ตามสูตร W3C Filter Effects spec เป๊ะๆ (ใช้ทั้งพรีวิวและภาพสุดท้าย — สูตรเดียวกัน 100%)
 // contrast/brightness: ตัวคูณตรงๆ ตามสเปก, saturate: ใช้ matrix ผสมสี 3x3 ตามสเปก (ไม่ใช่สูตรลัด)
 function applyW3CFilter(imageData,contrastPct,brightnessPct,saturatePct){
   const d=imageData.data;
@@ -1228,8 +1274,8 @@ function applyW3CFilter(imageData,contrastPct,brightnessPct,saturatePct){
   return imageData;
 }
 
-// สร้างภาพสุดท้าย (bake) จาก warpedB64Original ตามค่า slider ปัจจุบัน
-// คำนวณ pixel เองตามสูตร W3C เป๊ะๆ — ไม่พึ่งว่า browser รองรับ canvas filter หรือไม่
+// สร้างภาพสุดท้าย (bake) จาก warpedB64Original ตามค่า slider ปัจจุบัน — ความละเอียดเต็ม
+// คำนวณ pixel เองตามสูตร W3C เป๊ะๆ (ฟังก์ชันเดียวกับพรีวิว) — รับประกันภาพที่บันทึกตรงกับพรีวิวที่เห็น 100%
 // รับประกันผลลัพธ์เหมือนกัน 100% ทั้งถ่ายภาพและอัพโหลดไฟล์ (ใช้ฟังก์ชันเดียวกัน เส้นทางเดียวกัน)
 function bakeFilteredImage(){
   return new Promise((resolve,reject)=>{
@@ -1271,7 +1317,7 @@ async function confirmFilterAndScan(){
     // ★ นี่คือจุดเดียวที่ imgBlob/imgB64 ถูกตั้งค่าเป็นภาพสุดท้าย — saveReceipt() จะใช้ค่านี้เท่านั้น
     imgBlob=blob;
     imgB64=base64;
-    document.getElementById('prevImg').style.filter='none'; // ภาพจริงถูกปรับแล้ว ไม่ต้องพึ่ง CSS filter อีก
+    document.getElementById('prevImg').style.filter='none';
     document.getElementById('prevImg').src=base64;
     document.getElementById('prevBox').style.display='block';
 
@@ -1295,7 +1341,7 @@ function skipProcessing(workCanvas,quad){
   document.getElementById('btnSave').disabled=true; // ล็อกปุ่มบันทึกไว้ก่อน จนกว่าจะกด "ยืนยันและสแกน"
   openSheet('sheetForm');
 
-  setTimeout(()=>{
+  setTimeout(async ()=>{
     try{
       const {w:outW,h:outH}=computeOutputSize(quad);
       const warped=warpPerspective(workCanvas,quad,outW,outH);
@@ -1310,10 +1356,10 @@ function skipProcessing(workCanvas,quad){
       imgB64=null;   // ยังไม่ใช่ภาพสุดท้าย จนกว่าจะกดยืนยัน
       imgBlob=null;  // ป้องกันการบันทึกภาพ original โดยไม่ตั้งใจ
 
-      document.getElementById('prevImg').src=b64full;
+      await preparePreviewCanvas(b64full); // เตรียม canvas เล็กไว้สำหรับพรีวิวเร็วๆ
       document.getElementById('prevBox').style.display='block';
       document.getElementById('adjustFiltersBox').style.display='block'; // ← แสดง slider
-      resetImageFilter(); // รีเซต slider + อัปเดตพรีวิวด้วย CSS filter (แค่ตา ไม่ใช่ข้อมูลจริง)
+      resetImageFilter(); // รีเซต slider + วาดพรีวิวเริ่มต้น (ผ่าน applyW3CFilter ค่า default)
     }catch(e){
       console.error('Skip processing failed:',e);
       document.getElementById('aiLoad').style.display='none';
