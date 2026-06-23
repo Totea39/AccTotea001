@@ -1963,10 +1963,11 @@ function renderFiles(){
           </div>`).join('')}
         ${recs.length>3?`<div style="font-size:11px;color:#C8873A;padding-top:5px;font-weight:700">...และอีก ${recs.length-3} รายการ</div>`:''}
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
         <button class="btn btn-blue btn-sm" onclick="exportProj('${nm}')">📥 Export Excel</button>
         <button class="btn btn-secondary btn-sm" onclick="viewProj('${nm}')">👁️ ดูทั้งหมด</button>
       </div>
+      <button class="btn btn-danger btn-sm" style="width:100%;margin-top:0" onclick="deleteProject('${nm}')">🗑️ ลบโปรเจกต์นี้ทั้งหมด</button>
     </div>`;
   }).join('');
 }
@@ -2011,6 +2012,27 @@ function exportProj(nm){
 }
 
 function exportAll(){exportProj('__all__')}
+
+// ==========================================
+// DELETE PROJECT — ลบทุกใบเสร็จในโปรเจกต์ที่เลือกออกจาก DB ถาวร
+// ==========================================
+async function deleteProject(nm){
+  const recs=allRec.filter(r=>(r.project||'ไม่ระบุโปรเจกต์')===nm);
+  if(!recs.length) return toast('ไม่มีข้อมูลในโปรเจกต์นี้',true);
+  if(!confirm(`⚠️ ยืนยันลบโปรเจกต์ "${nm}"\n\nใบเสร็จ ${recs.length} รายการในโปรเจกต์นี้จะถูกลบออกจากระบบถาวร ไม่สามารถกู้คืนได้`)) return;
+  if(!sb) return toast('ยังไม่ได้เชื่อมต่อระบบ',true);
+  try{
+    const ids=recs.map(r=>r.id);
+    const {error}=await sb.from('receipts').delete().in('id',ids);
+    if(error) throw error;
+    toast(`✅ ลบโปรเจกต์ "${nm}" เรียบร้อย (${recs.length} รายการ)`);
+    await fetchAll();
+    renderFiles();
+  }catch(e){
+    console.error(e);
+    toast('ลบโปรเจกต์ผิดพลาด: '+(e.message||''),true);
+  }
+}
 
 // ==========================================
 // ข้อ 2: ADMIN — ปลดล็อกเมนูแอดมิน + เปลี่ยนรหัสผ่านเข้าใช้งาน
