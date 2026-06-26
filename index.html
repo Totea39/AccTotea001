@@ -491,7 +491,8 @@ html,body{font-family:'Sarabun',-apple-system,BlinkMacSystemFont,sans-serif;back
   </div>
   <div class="form-group">
     <label class="form-label">📁 ชื่อโปรเจกต์</label>
-    <input type="text" id="fProj" class="input" placeholder="เช่น ทริปโตเกียว, งานอีเวนต์">
+    <input type="text" id="fProj" class="input" placeholder="เช่น ทริปโตเกียว, งานอีเวนต์" list="projList" autocomplete="off">
+    <datalist id="projList"></datalist>
   </div>
   <div class="form-group">
     <label class="form-label">📝 หมายเหตุ</label>
@@ -811,6 +812,7 @@ function openFormManual(){
   closeSheet('sheetAction');
   imgBlob=null; imgB64=null;
   resetForm();
+  refreshProjList();
   document.getElementById('formTitle').textContent='✏️ กรอกข้อมูลใบเสร็จ';
   document.getElementById('fDate').value=today();
   openSheet('sheetForm');
@@ -849,6 +851,14 @@ function resetForm(){
 }
 
 function today(){return new Date().toISOString().split('T')[0]}
+
+// อัปเดต dropdown รายชื่อโปรเจกต์ที่เคยใช้แล้ว
+function refreshProjList(){
+  const dl=document.getElementById('projList');
+  if(!dl) return;
+  const projects=[...new Set(allRec.map(r=>r.project).filter(p=>p&&p.trim()))].sort((a,b)=>a.localeCompare(b,'th'));
+  dl.innerHTML=projects.map(p=>`<option value="${p.replace(/"/g,'&quot;')}"></option>`).join('');
+}
 
 // ==========================================
 // DETAIL MODAL
@@ -940,6 +950,7 @@ function openEditForm(id){
   document.getElementById('fProj').value=r.project||'';
   document.getElementById('fNote').value=r.notes||'';
   calcTHB();
+  refreshProjList();
   document.getElementById('adjustFiltersBox').style.display='none';
   document.getElementById('prevImg').style.filter='none';
   if(r.image_url){
@@ -1384,6 +1395,7 @@ function skipProcessing(workCanvas,quad){
   document.getElementById('prevBox').style.display='none';
   document.getElementById('adjustFiltersBox').style.display='none';
   document.getElementById('btnSave').disabled=true; // ล็อกปุ่มบันทึกไว้ก่อน จนกว่าจะกด "ยืนยันและสแกน"
+  refreshProjList();
   openSheet('sheetForm');
 
   setTimeout(async ()=>{
@@ -1918,16 +1930,8 @@ function renderSummary(){
 function exportSummary(){
   const {list,yr,mo}=getFilteredByPeriod();
   if(!list.length) return toast('ไม่มีข้อมูลในช่วงนี้ให้ export',true);
-  const rows=list.map(r=>({
-    'วันที่':r.date||'','ชื่อร้านค้า':r.vendor||'','หมวดหมู่':r.category||'','โปรเจกต์':r.project||'',
-    'ยอดเงิน':r.amount||0,'สกุลเงิน':r.currency||'THB','อัตราแลก':r.exchange_rate||1,
-    'ยอดในบาท':r.amount_thb||r.amount||0,'หมายเหตุ':r.notes||'','ลิงก์รูป':r.image_url||'',
-    'บันทึกเมื่อ':new Date(r.created_at).toLocaleString('th-TH')
-  }));
-  const ws=XLSX.utils.json_to_sheet(rows);
-  const wb=XLSX.utils.book_new();
   const label=mo===0?`Year_${yr}`:`Month_${mo}_${yr}`;
-  XLSX.utils.book_append_sheet(wb,ws,label.slice(0,31));
+  const wb=buildExcelWorkbook(list,label);
   XLSX.writeFile(wb,`GJ_Summary_${label}_${Date.now()}.xlsx`);
   toast('Export สำเร็จ 📊');
 }
@@ -1995,18 +1999,53 @@ function viewProj(nm){
     }).join('')}`;
 }
 
-function exportProj(nm){
-  const recs=nm==='__all__'?allRec:allRec.filter(r=>(r.project||'ไม่ระบุโปรเจกต์')===nm);
-  if(!recs.length) return toast('ไม่มีข้อมูล',true);
-  const rows=recs.map(r=>({
+// ==========================================
+// EXCEL EXPORT HELPER — สร้าง workbook พร้อม 2 sheet (สรุปใบเสร็จ + รายการสินค้า)
+// ==========================================
+function buildExcelWorkbook(recs, mainSheetName){
+  // Sheet 1: สรุปใบเสร็จ (เหมือนเดิม)
+  const mainRows=recs.map(r=>({
     'วันที่':r.date||'','ชื่อร้านค้า':r.vendor||'','หมวดหมู่':r.category||'','โปรเจกต์':r.project||'',
     'ยอดเงิน':r.amount||0,'สกุลเงิน':r.currency||'THB','อัตราแลก':r.exchange_rate||1,
     'ยอดในบาท':r.amount_thb||r.amount||0,'หมายเหตุ':r.notes||'','ลิงก์รูป':r.image_url||'',
     'บันทึกเมื่อ':new Date(r.created_at).toLocaleString('th-TH')
   }));
-  const ws=XLSX.utils.json_to_sheet(rows);
+
+  // Sheet 2: รายการสินค้า/Itemized Bill
+  const itemRows=[];
+  recs.forEach(r=>{
+    let items=[];
+    try{ items=r.items_json?JSON.parse(r.items_json):[]; }catch(e){ items=[]; }
+    if(Array.isArray(items)&&items.length){
+      items.forEach(it=>{
+        itemRows.push({
+          'โปรเจกต์':r.project||'',
+          'ชื่อร้านค้า':r.vendor||'',
+          'วันที่':r.date||'',
+          'ชื่อรายการ (ต้นฉบับ)':it.name_original||'',
+          'ชื่อรายการ (EN)':it.name_en||'',
+          'จำนวน':it.qty||1,
+          'ราคา':it.price||0,
+          'สกุลเงิน':r.currency||'THB'
+        });
+      });
+    }
+  });
+
   const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,nm.slice(0,31));
+  const ws=XLSX.utils.json_to_sheet(mainRows);
+  XLSX.utils.book_append_sheet(wb,ws,mainSheetName.slice(0,31));
+  if(itemRows.length){
+    const wsItems=XLSX.utils.json_to_sheet(itemRows);
+    XLSX.utils.book_append_sheet(wb,wsItems,'รายการสินค้า');
+  }
+  return wb;
+}
+
+function exportProj(nm){
+  const recs=nm==='__all__'?allRec:allRec.filter(r=>(r.project||'ไม่ระบุโปรเจกต์')===nm);
+  if(!recs.length) return toast('ไม่มีข้อมูล',true);
+  const wb=buildExcelWorkbook(recs,nm==='__all__'?'ทั้งหมด':nm);
   XLSX.writeFile(wb,`GJ_${nm}_${Date.now()}.xlsx`);
   toast('Export สำเร็จ 📊');
 }
@@ -2019,6 +2058,13 @@ function exportAll(){exportProj('__all__')}
 async function deleteProject(nm){
   const recs=allRec.filter(r=>(r.project||'ไม่ระบุโปรเจกต์')===nm);
   if(!recs.length) return toast('ไม่มีข้อมูลในโปรเจกต์นี้',true);
+
+  // ขอรหัสผ่านก่อนลบ (ใช้รหัสเดียวกับรหัสเข้าหน้าแรก)
+  const pw=prompt(`🔒 ลบโปรเจกต์ "${nm}" (${recs.length} รายการ)\n\nกรุณาใส่รหัสผ่านเพื่อยืนยันการลบ:`);
+  if(pw===null) return; // กด Cancel
+  if(appPassword===null) await fetchAppPassword();
+  if(pw!==appPassword) return toast('รหัสผ่านไม่ถูกต้อง ไม่สามารถลบได้',true);
+
   if(!confirm(`⚠️ ยืนยันลบโปรเจกต์ "${nm}"\n\nใบเสร็จ ${recs.length} รายการในโปรเจกต์นี้จะถูกลบออกจากระบบถาวร ไม่สามารถกู้คืนได้`)) return;
   if(!sb) return toast('ยังไม่ได้เชื่อมต่อระบบ',true);
   try{
