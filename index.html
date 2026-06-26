@@ -489,10 +489,13 @@ html,body{font-family:'Sarabun',-apple-system,BlinkMacSystemFont,sans-serif;back
     <label class="form-label">🇹🇭 ยอดรวมเป็นบาทไทย</label>
     <div class="rate-display" id="thbShow">— กรอกยอดเงินและอัตราแลกเปลี่ยน</div>
   </div>
-  <div class="form-group">
+  <div class="form-group" style="position:relative">
     <label class="form-label">📁 ชื่อโปรเจกต์</label>
-    <input type="text" id="fProj" class="input" placeholder="เช่น ทริปโตเกียว, งานอีเวนต์" list="projList" autocomplete="off">
-    <datalist id="projList"></datalist>
+    <input type="text" id="fProj" class="input" placeholder="เช่น ทริปโตเกียว, งานอีเวนต์" autocomplete="off"
+      onfocus="showProjDropdown()"
+      oninput="filterProjDropdown(this.value)"
+      onblur="setTimeout(hideProjDropdown,200)">
+    <div id="projDropdown" style="display:none;position:absolute;left:0;right:0;z-index:602;margin-top:4px;background:#FFFDF8;border:2px solid #C8873A;border-radius:14px;overflow:hidden;box-shadow:0 6px 20px rgba(107,76,42,.18);max-height:210px;overflow-y:auto"></div>
   </div>
   <div class="form-group">
     <label class="form-label">📝 หมายเหตุ</label>
@@ -852,12 +855,47 @@ function resetForm(){
 
 function today(){return new Date().toISOString().split('T')[0]}
 
-// อัปเดต dropdown รายชื่อโปรเจกต์ที่เคยใช้แล้ว
+// ==========================================
+// CUSTOM PROJECT DROPDOWN (iOS Safari compatible)
+// ใช้แทน <datalist> ที่ iOS รองรับไม่ดี
+// ==========================================
+let _cachedProjects=[];
+
 function refreshProjList(){
-  const dl=document.getElementById('projList');
-  if(!dl) return;
-  const projects=[...new Set(allRec.map(r=>r.project).filter(p=>p&&p.trim()))].sort((a,b)=>a.localeCompare(b,'th'));
-  dl.innerHTML=projects.map(p=>`<option value="${p.replace(/"/g,'&quot;')}"></option>`).join('');
+  _cachedProjects=[...new Set(allRec.map(r=>r.project).filter(p=>p&&p.trim()))].sort((a,b)=>a.localeCompare(b,'th'));
+  hideProjDropdown();
+}
+
+function showProjDropdown(){
+  if(!_cachedProjects.length) return;
+  filterProjDropdown(document.getElementById('fProj').value||'');
+}
+
+function filterProjDropdown(val){
+  const dd=document.getElementById('projDropdown');
+  if(!dd||!_cachedProjects.length){ if(dd) dd.style.display='none'; return; }
+  const v=(val||'').toLowerCase();
+  const filtered=v?_cachedProjects.filter(p=>p.toLowerCase().includes(v)):_cachedProjects;
+  if(!filtered.length){ dd.style.display='none'; return; }
+  dd.innerHTML=filtered.map(p=>{
+    // escape สำหรับใส่ใน attribute onclick
+    const safe=p.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return `<button type="button"
+      style="width:100%;text-align:left;padding:13px 14px;font-size:14px;font-weight:600;color:#3D2810;background:none;border:none;border-bottom:1px solid #F0E4CC;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;touch-action:manipulation;display:block"
+      onpointerdown="event.preventDefault()"
+      onclick="selectProj('${safe}')">${p}</button>`;
+  }).join('');
+  dd.style.display='block';
+}
+
+function selectProj(val){
+  document.getElementById('fProj').value=val;
+  hideProjDropdown();
+}
+
+function hideProjDropdown(){
+  const dd=document.getElementById('projDropdown');
+  if(dd) dd.style.display='none';
 }
 
 // ==========================================
